@@ -1,3 +1,6 @@
-[submodule "Simplelink-wifi-sdk"]
-	path = resources
+[submodule "simplelink-wifi-sdk"]
+	path = resources/simplelink-wifi-sdk
+	url = https://github.com/TexasInstruments/simplelink-wifi-sdk.git
+[submodule "resources/simplelink-wifi-sdk"]
+	path = resources/simplelink-wifi-sdk
 	url = https://github.com/TexasInstruments/simplelink-wifi-sdk.git
