@@ -18,7 +18,7 @@
         device="Cortex M.CC35X1E"
         ignoreDefaultDeviceSettings="true"
         ignoreDefaultCCSSettings="false"
-        products="com.ti.SIMPLELINK_WIFI_SDK;com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig"
+        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig"
         compilerBuildOptions="
             -I${PROJECT_ROOT}
             -I${PROJECT_ROOT}/${ConfigName}
@@ -29,55 +29,55 @@
             -DNVOCMP_POSIX_MUTEX
 			-DMBEDTLS_CONFIG_FILE=&apos;&quot;config-hsm.h&quot;&apos;
 			-DMBEDTLS_PSA_CRYPTO_CONFIG_FILE=&apos;&quot;config-psa-crypto-hsm.h&quot;&apos;
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/kernel/freertos
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/posix/ticlang
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/freertos/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/freertos/portable/GCC/ARM_CM33_NTZ/non_secure
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/net/ble_interface/inc_adapt
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/net/ble_interface/inc_common
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/drivers/net/wifi/wifi_platform/cc35xx/inc_common
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/net/wifi_stack/inc_common
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/drivers/net/wifi/wifi_host_driver/inc_common
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/drivers/net/wifi/wifi_host_driver/inc_adapt
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/tools/TI_Containers
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/lwip/lwip-stack/src/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/lwip/ti_config/lwip-port/osi/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/lwip/lwip-contrib
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/ti_config/nimble-port/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/ti_config/nimble-port/porting/npl/osi/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/nimble/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/nimble/host/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/nimble/host/services/gap/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/nimble/host/services/gatt/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/nimble/host/services/dis/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/nimble/host/util/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/nimble/transport/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/nimble-src/porting/nimble/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/include
-			-I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/tests/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/ti/configs
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/ti/port/
-			-I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/include/psa
-			-I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/configs
-			-I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/include/mbedtls
-			-I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/mbedTLS/library
-			-I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/adaptation
-			-I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/transport
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/configs
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/iot-middleware-freertos-samples/demos/common/connection
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/iot-middleware-freertos-samples/demos/common/utilities
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/azure-iot-middleware-freertos/source/interface
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/azure-iot-middleware-freertos/ports/coreMQTT
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/azure-iot-middleware-freertos/source/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/azure-iot-middleware-freertos/source
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/coreMQTT/source/interface
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/coreMQTT/source/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/azure-iot-middleware-freertos/source/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/coreMQTT/source/include
-            -I${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/examples/rtos/LP_EM_CC35X1/demos/azure_iot_project_projectspec/components/azure-sdk-for-c/sdk/inc
+            -I../../../../resources/simplelink-wifi-sdk/source
+            -I../../../../resources/simplelink-wifi-sdk/kernel/freertos
+            -I../../../../resources/simplelink-wifi-sdk/source/ti/posix/ticlang
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/freertos/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/freertos/portable/GCC/ARM_CM33_NTZ/non_secure
+            -I../../../../resources/simplelink-wifi-sdk/source/ti/net/ble_interface/inc_adapt
+            -I../../../../resources/simplelink-wifi-sdk/source/ti/net/ble_interface/inc_common
+            -I../../../../resources/simplelink-wifi-sdk/source/ti/drivers/net/wifi/wifi_platform/cc35xx/inc_common
+            -I../../../../resources/simplelink-wifi-sdk/source/ti/net/wifi_stack/inc_common
+            -I../../../../resources/simplelink-wifi-sdk/source/ti/drivers/net/wifi/wifi_host_driver/inc_common
+            -I../../../../resources/simplelink-wifi-sdk/source/ti/drivers/net/wifi/wifi_host_driver/inc_adapt
+            -I../../../../resources/simplelink-wifi-sdk/tools/TI_Containers
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/lwip/lwip-stack/src/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/lwip/ti_config/lwip-port/osi/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/lwip/lwip-contrib
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/ti_config/nimble-port/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/ti_config/nimble-port/porting/npl/osi/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/nimble/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/nimble/host/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/nimble/host/services/gap/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/nimble/host/services/gatt/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/nimble/host/services/dis/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/nimble/host/util/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/nimble/transport/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/nimble-src/porting/nimble/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/include
+			-I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/tests/include
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/ti/configs
+            -I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/ti/port/
+			-I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/include/psa
+			-I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/configs
+			-I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/include/mbedtls
+			-I../../../../resources/simplelink-wifi-sdk/source/third_party/mbedTLS/library
+			-I../../adaptation
+			-I../../transport
+            -I../../configs
+            -I../..
+            -I../../components/iot-middleware-freertos-samples/demos/common/connection
+            -I../../components/iot-middleware-freertos-samples/demos/common/utilities
+            -I../../components/azure-iot-middleware-freertos/source/interface
+            -I../../components/azure-iot-middleware-freertos/ports/coreMQTT
+            -I../../components/azure-iot-middleware-freertos/source/include
+            -I../../components/azure-iot-middleware-freertos/source
+            -I../../components/coreMQTT/source/interface
+            -I../../components/coreMQTT/source/include
+            -I../../components/azure-iot-middleware-freertos/source/include
+            -I../../components/coreMQTT/source/include
+            -I../../components/azure-sdk-for-c/sdk/inc
             -gdwarf-3
             -mcpu=cortex-m33
             -mfloat-abi=hard
@@ -85,15 +85,15 @@
             -Wall
         "
         linkerBuildOptions="
-            -L${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/lwip/lib/ticlang/lwip.a
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/hostap/lib/ticlang/hostap.a
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/third_party/nimble/lib/ticlang/nimble.a
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/net/wifi_stack/lib/ticlang/wifi_stack.a
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/net/ble_interface/lib/ticlang/ble_interface.a
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/drivers/net/wifi/wifi_host_driver/lib/ticlang/wifi_host_driver.a
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/drivers/net/wifi/wifi_platform/cc35xx/lib/ticlang/wifi_platform_cc35xx.a
-            -Wl,-l${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/source/ti/utils/FWU/lib/ticlang/FWU.a
+            -L../../../../resources/simplelink-wifi-sdk/source
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/third_party/lwip/lib/ticlang/lwip.a
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/third_party/hostap/lib/ticlang/hostap.a
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/third_party/nimble/lib/ticlang/nimble.a
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/ti/net/wifi_stack/lib/ticlang/wifi_stack.a
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/ti/net/ble_interface/lib/ticlang/ble_interface.a
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/ti/drivers/net/wifi/wifi_host_driver/lib/ticlang/wifi_host_driver.a
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/ti/drivers/net/wifi/wifi_platform/cc35xx/lib/ticlang/wifi_platform_cc35xx.a
+            -Wl,-l../../../../resources/simplelink-wifi-sdk/source/ti/utils/FWU/lib/ticlang/FWU.a
             -Wl,--reread_libs
             -L${PROJECT_BUILD_DIR}/syscfg
             -lti_utils_build_linker.cmd.genlibs
@@ -103,7 +103,7 @@
             -llibc.a
         "
         sysConfigBuildOptions="
-            --product ${COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR}/.metadata/product.json
+            --product ../../../../resources/simplelink-wifi-sdk/.metadata/product.json
             --product ${COM_TI_SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR}/.metadata/product.json
             --compiler ticlang
         "
