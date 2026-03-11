@@ -1,3 +1,15 @@
 [submodule "resources/simplelink-wifi-sdk"]
 	path = resources/simplelink-wifi-sdk
 	url = https://github.com/TexasInstruments/simplelink-wifi-sdk.git
+[submodule "resources/third-party/azure-iot-middleware-freertos"]
+	path = resources/third-party/azure-iot-middleware-freertos
+	url = https://github.com/Azure/azure-iot-middleware-freertos.git
+[submodule "resources/third-party/azure-sdk-for-c"]
+	path = resources/third-party/azure-sdk-for-c
+	url = https://github.com/Azure/azure-sdk-for-c.git
+[submodule "resources/third-party/coreMQTT"]
+	path = resources/third-party/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT.git
+[submodule "resources/third-party/iot-middleware-freertos-samples"]
+	path = resources/third-party/iot-middleware-freertos-samples
+	url = https://github.com/Azure-Samples/iot-middleware-freertos-samples.git

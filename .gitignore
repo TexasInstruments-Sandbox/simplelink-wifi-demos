@@ -35,4 +35,4 @@
 
 #SDK dependencies
 resources/simplelink-wifi-sdk/*
-resources/third-party/*
+# resources/third-party/*
