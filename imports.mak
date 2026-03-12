@@ -5,19 +5,20 @@
 # have spaces.
 #
 
-SYSCONFIG_TOOL         ?= /home/username/ti/ccs2010/ccs/utils/sysconfig_1.26.0/sysconfig_cli.sh
+SYSCONFIG_TOOL                      ?= /Applications/ti/sysconfig_1.26.1/sysconfig_cli.sh
+SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR ?= /Applications/ti/simplelink_wifi_toolbox_macos_4_1_11
 
-CMAKE                  ?= /home/username/cmake-3.21.3/bin/cmake
-PYTHON                 ?= python3
+CMAKE                               ?= /opt/homebrew/bin/cmake
+PYTHON                              ?= python3
 
-TICLANG_ARMCOMPILER    ?= /home/username/ti/ccs2010/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS
-GCC_ARMCOMPILER        ?= /home/username/arm-none-eabi-gcc/12.3.Rel1-0
+TICLANG_ARMCOMPILER                 ?= /Users/a0226081/ti/ccs2041/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS
+GCC_ARMCOMPILER                     ?= /home/username/arm-none-eabi-gcc/12.3.Rel1-0
 
 #
 # Do Not change the variables below these comments
 #
 
-SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR = resources/simplelink-wifi-sdk
+
 
 
 ifeq ("$(SHELL)","sh.exe")
