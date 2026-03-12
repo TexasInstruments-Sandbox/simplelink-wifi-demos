@@ -61,9 +61,9 @@
 //ERRORS
 #include "errors.h"
 
-#include "transport/transport_tls_socket.h"
-#include "transport/transport_abstraction.h"
-#include "transport/transport_socket.h"
+#include "transport_tls_socket.h"
+#include "transport_abstraction.h"
+#include "transport_socket.h"
 
 #include <ti/drivers/GPIO.h>
 
@@ -1302,7 +1302,6 @@ uint32_t prvIoTHubInfoGet( NetworkCredentials_t * pXNetworkCredentials,
         xTransport.pxNetworkContext = &xNetworkContext;
         xTransport.xSend = TLS_Socket_Send;
         xTransport.xRecv = TLS_Socket_Recv;
-        xTransport.xWritev = NULL;
 
         #ifdef democonfigUSE_HSM
 
@@ -1504,7 +1503,6 @@ void prvAzureDemoTask( void * pvParameters )
                 xTransport.pxNetworkContext = &xNetworkContext;
                 xTransport.xSend = TLS_Socket_Send;
                 xTransport.xRecv = TLS_Socket_Recv;
-                xTransport.xWritev = NULL;
 
                 /* Init IoT Hub option */
                 xResult = AzureIoTHubClient_OptionsInit( &xHubOptions );

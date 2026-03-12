@@ -44,7 +44,20 @@
 #include <stdint.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+
+/* Define struct stat for embedded systems (sys/stat.h not available in TI POSIX) */
+struct stat {
+    unsigned long st_dev;
+    unsigned long st_ino;
+    unsigned int st_mode;
+    int st_nlink;
+    int st_uid;
+    int st_gid;
+    unsigned long st_rdev;
+    long st_size;
+    long st_blksize;
+    long st_blocks;
+};
 
 __attribute__((weak)) int _close(int fildes)
 {
