@@ -34,5 +34,3 @@
 .claude
 
 #SDK dependencies
-resources/simplelink-wifi-sdk/*
-# resources/third-party/*
