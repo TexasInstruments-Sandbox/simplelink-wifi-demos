@@ -22,6 +22,9 @@ SDK_DIR = resources/simplelink-wifi-sdk
 MBEDTLS_TICLANG_DIR = $(SDK_DIR)/source/third_party/mbedtls/ti/lib/ticlang/m33f
 MBEDTLS_GCC_DIR = $(SDK_DIR)/source/third_party/mbedtls/ti/lib/gcc/m33f
 
+# Default toolchain for examples
+TOOLCHAIN ?= ticlang
+
 # Color output (Linux/macOS only, harmless on Windows)
 COLOR_RESET = \033[0m
 COLOR_BOLD = \033[1m
@@ -225,7 +228,7 @@ help:
 	@echo "$(COLOR_BOLD)Quick Start:$(COLOR_RESET)"
 	@echo "  make                    Build all dependencies for TI Clang (default)"
 	@echo ""
-	@echo "$(COLOR_BOLD)Build Targets:$(COLOR_RESET)"
+	@echo "$(COLOR_BOLD)Build SDK Dependencies:$(COLOR_RESET)"
 	@echo "  make all                Build SDK + mbedTLS for TI Clang (same as 'make')"
 	@echo "  make build-all-ticlang  Build everything for TI Clang toolchain"
 	@echo "  make build-all-gcc      Build everything for GCC toolchain"
@@ -238,12 +241,18 @@ help:
 	@echo "  make build-mbedtls-ticlang  Build mbedTLS for TI Clang"
 	@echo "  make build-mbedtls-gcc      Build mbedTLS for GCC"
 	@echo ""
+	@echo "$(COLOR_BOLD)Build Examples:$(COLOR_RESET)"
+	@echo "  make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang"
+	@echo "  make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=gcc"
+	@echo ""
 	@echo "$(COLOR_BOLD)Clean Targets:$(COLOR_RESET)"
 	@echo "  make clean              Clean all build artifacts"
 	@echo "  make clean-sdk          Clean only SDK build artifacts"
 	@echo "  make clean-mbedtls      Clean only mbedTLS build artifacts"
+	@echo "  make clean-example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang"
 	@echo ""
 	@echo "$(COLOR_BOLD)Utility Targets:$(COLOR_RESET)"
+	@echo "  make status             Show build status"
 	@echo "  make check-tools        Verify all build tools are installed"
 	@echo "  make help               Show this help message"
 	@echo ""
@@ -255,20 +264,78 @@ help:
 	@echo "$(COLOR_BOLD)Build Time Estimates:$(COLOR_RESET)"
 	@echo "  SimpleLink SDK:  3-5 minutes"
 	@echo "  mbedTLS:         1-2 minutes"
+	@echo "  Example:         30-60 seconds"
 	@echo "  Total:           4-7 minutes"
 	@echo ""
 	@echo "$(COLOR_BOLD)Example Workflow:$(COLOR_RESET)"
-	@echo "  $(COLOR_BLUE)# Build everything$(COLOR_RESET)"
+	@echo "  $(COLOR_BLUE)# 1. Build SDK dependencies$(COLOR_RESET)"
 	@echo "  make"
 	@echo ""
-	@echo "  $(COLOR_BLUE)# Import project in CCS:$(COLOR_RESET)"
+	@echo "  $(COLOR_BLUE)# 2a. Build example with TI Clang$(COLOR_RESET)"
+	@echo "  make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang"
+	@echo ""
+	@echo "  $(COLOR_BLUE)# 2b. Or build example directly$(COLOR_RESET)"
+	@echo "  cd projects/LP_EM_CC35X1/azure-iot-mqtt/freertos/ticlang && make"
+	@echo ""
+	@echo "  $(COLOR_BLUE)# 3. Or import in CCS:$(COLOR_RESET)"
 	@echo "  File → Import → CCS Projects"
 	@echo "  Browse: projects/LP_EM_CC35X1/azure-iot-mqtt/freertos/ticlang/"
 	@echo ""
-	@echo "  $(COLOR_BLUE)# Or build example via command line:$(COLOR_RESET)"
-	@echo "  cd projects/LP_EM_CC35X1/azure-iot-mqtt/freertos/ticlang"
-	@echo "  make"
+
+# ==============================================================================
+# Example Build Targets
+# ==============================================================================
+
+.PHONY: example example-ticlang example-gcc clean-example
+
+# Build example with specified toolchain
+# Usage: make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang
+example: example-$(TOOLCHAIN)
+
+example-ticlang:
+ifndef EXAMPLE
+	@echo "$(COLOR_YELLOW)ERROR: EXAMPLE not specified$(COLOR_RESET)"
+	@echo "Usage: make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang"
+	@exit 1
+endif
 	@echo ""
+	@echo "$(COLOR_BLUE)$(COLOR_BOLD)========================================$(COLOR_RESET)"
+	@echo "$(COLOR_BLUE)$(COLOR_BOLD)Building Example: $(EXAMPLE) (TI Clang)$(COLOR_RESET)"
+	@echo "$(COLOR_BLUE)$(COLOR_BOLD)========================================$(COLOR_RESET)"
+	@echo ""
+	@cd $(EXAMPLE)/freertos/ticlang && $(MAKE)
+	@echo ""
+	@echo "$(COLOR_GREEN)✓ Example build complete$(COLOR_RESET)"
+
+example-gcc:
+ifndef EXAMPLE
+	@echo "$(COLOR_YELLOW)ERROR: EXAMPLE not specified$(COLOR_RESET)"
+	@echo "Usage: make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=gcc"
+	@exit 1
+endif
+	@echo ""
+	@echo "$(COLOR_BLUE)$(COLOR_BOLD)========================================$(COLOR_RESET)"
+	@echo "$(COLOR_BLUE)$(COLOR_BOLD)Building Example: $(EXAMPLE) (GCC)$(COLOR_RESET)"
+	@echo "$(COLOR_BLUE)$(COLOR_BOLD)========================================$(COLOR_RESET)"
+	@echo ""
+	@cd $(EXAMPLE)/freertos/gcc && $(MAKE)
+	@echo ""
+	@echo "$(COLOR_GREEN)✓ Example build complete$(COLOR_RESET)"
+
+clean-example:
+ifndef EXAMPLE
+	@echo "$(COLOR_YELLOW)ERROR: EXAMPLE not specified$(COLOR_RESET)"
+	@echo "Usage: make clean-example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang"
+	@exit 1
+endif
+	@echo ""
+	@echo "$(COLOR_YELLOW)Cleaning example: $(EXAMPLE) ($(TOOLCHAIN))$(COLOR_RESET)"
+	@if [ "$(TOOLCHAIN)" = "gcc" ]; then \
+		cd $(EXAMPLE)/freertos/gcc && $(MAKE) clean; \
+	else \
+		cd $(EXAMPLE)/freertos/ticlang && $(MAKE) clean; \
+	fi
+	@echo "$(COLOR_GREEN)✓ Example cleaned$(COLOR_RESET)"
 
 # ==============================================================================
 # Status Target (show what's built)

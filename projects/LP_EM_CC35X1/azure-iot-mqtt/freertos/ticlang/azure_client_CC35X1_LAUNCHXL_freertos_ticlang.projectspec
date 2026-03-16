@@ -112,6 +112,7 @@
         "
         description="connect to Azure IoT MQTT broker">
 
+        <!-- ===== PATH VARIABLES ===== -->
         <pathVariable name="SIMPLELINK_SDK_DEMO_ROOT" path="../../../../.." scope="project"/>
         <pathVariable name="SIMPLELINK_SDK" path="../../../../../resources/simplelink-wifi-sdk" scope="project"/>
         <pathVariable name="IOT_MIDDLEWARE_FREERTOS" path="../../../../../resources/third-party/iot-middleware-freertos-samples" scope="project"/>
@@ -119,11 +120,14 @@
         <pathVariable name="COREMQTT" path="../../../../../resources/third-party/coreMQTT" scope="project"/>
         <pathVariable name="AZURE_SDK_FOR_C" path="../../../../../resources/third-party/azure-sdk-for-c" scope="project"/>
 
+        <!-- ===== PROJECT PROPERTIES ===== -->
 		<property name="launch.loadSymbolsOnly" value="true"/>
         <property name="buildProfile" value="release"/>
         <property name="isHybrid" value="true"/>
 
-        <!-- ===== APPLICATION SOURCE FILES (Keep in project) ===== -->
+        <!-- ============================================================================ -->
+        <!-- APPLICATION SOURCE FILES (Project Root)                                      -->
+        <!-- ============================================================================ -->
         <file path="../../aziot_client_app.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
         <file path="../../aziot_client_app.h" openOnCreation="false" excludeFromBuild="false" action="copy">
@@ -136,29 +140,38 @@
         </file>
         <file path="../../mqtt_settings.h" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
-        <!-- ===== HARDWARE-SPECIFIC FILES (Keep in project) ===== -->
+        <file path="../../backoff_algorithm.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../backoff_algorithm.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../import_nist_kw.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../syscalls_stubs.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../README.html" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- HARDWARE/PLATFORM SPECIFIC (Project Root - from src/freertos/platform)      -->
+        <!-- ============================================================================ -->
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/nvocmp_cc35xx.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/nvocmp.h" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/nvintf.h" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
-        <file path="../../syscalls_stubs.c" openOnCreation="false" excludeFromBuild="false" action="copy">
-        </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/crc.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/crc.h" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
-        <file path="../../import_nist_kw.c" openOnCreation="false" excludeFromBuild="false" action="copy">
-        </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/common/inc/default_netif.h" openOnCreation="false" excludeFromBuild="false" action="copy">
-        </file> 
+        </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/uart_term.h" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
-        <file path="../../README.html" openOnCreation="false" excludeFromBuild="false" action="copy">
-        </file>
 
-        <!-- ===== ADAPTATION LAYER (From project) ===== -->
+        <!-- ============================================================================ -->
+        <!-- ADAPTATION LAYER (adaptation/ directory)                                    -->
+        <!-- ============================================================================ -->
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/osi_dpl.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/osi_filesystem.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
@@ -180,12 +193,10 @@
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/syslog.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
         </file>
 
-        <!-- ===== CONFIGS (From project) ===== -->
+        <!-- ============================================================================ -->
+        <!-- CONFIGURATION FILES (configs/ directory)                                    -->
+        <!-- ============================================================================ -->
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs/azure_iot_config.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="configs">
-        </file>
-		<file path="../../backoff_algorithm.h" openOnCreation="false" excludeFromBuild="false" action="copy">
-        </file>
-        <file path="../../backoff_algorithm.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs/core_mqtt_config.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="configs">
         </file>
@@ -194,7 +205,9 @@
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs/mbedtls_config.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="configs">
         </file>
 
-        <!-- ===== TRANSPORT LAYER (From src/freertos) ===== -->
+        <!-- ============================================================================ -->
+        <!-- TRANSPORT LAYER (transport/ directory)                                      -->
+        <!-- ============================================================================ -->
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/transport_socket.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="transport">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/transport_tls_socket_using_mbedtls.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="transport">
@@ -203,8 +216,30 @@
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/mbedtls_freertos_port.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="transport">
         </file>
+        <file path="${SIMPLELINK_SDK}/source/third_party/mbedTLS/ti/port/threading_alt.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport">
+        </file>
 
-        <!-- ===== NETWORK STACK (From src/freertos) ===== -->
+        <!-- ============================================================================ -->
+        <!-- CONNECTION LAYER (connection/ directory)                                    -->
+        <!-- ============================================================================ -->
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs/azure_sample_connection.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="connection">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- LOGGING (logging/ directory)                                                -->
+        <!-- ============================================================================ -->
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging_levels.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging_stack.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- UTILITIES (utilities/ directory)                                            -->
+        <!-- Network stack and platform interfaces                                       -->
+        <!-- ============================================================================ -->
+        <!-- Network Stack Interfaces -->
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc/dns_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/dns_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
@@ -221,8 +256,7 @@
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/wifi_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
         </file>
-
-        <!-- ===== PLATFORM LAYER (From src/freertos) ===== -->
+        <!-- Platform Interfaces (button, LED) -->
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/button_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/button_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
@@ -232,20 +266,11 @@
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/led_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
         </file>
 
-        <!-- ===== CONNECTION (From project) ===== -->
-		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs/azure_sample_connection.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="connection">
-        </file>
-
-        <!-- ===== LOGGING (From project) ===== -->
-		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
-        </file>
-		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging_levels.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
-        </file>
-		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging_stack.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
-        </file>
-
-        <!-- ===== AZURE SDK FOR C (.c and .h files) ===== -->
-        <!-- Headers -->
+        <!-- ============================================================================ -->
+        <!-- AZURE SDK FOR C (components/azure-sdk-for-c/)                               -->
+        <!-- Linked from resources/third-party/azure-sdk-for-c                           -->
+        <!-- ============================================================================ -->
+        <!-- Core Headers -->
 		<file path="${AZURE_SDK_FOR_C}/sdk/inc/azure/az_core.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/inc/azure">
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/inc/azure/az_iot.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/inc/azure">
@@ -282,6 +307,7 @@
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/inc/azure/core/az_version.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/inc/azure/core">
         </file>
+        <!-- Internal Headers -->
 		<file path="${AZURE_SDK_FOR_C}/sdk/inc/azure/core/internal/az_config_internal.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/inc/azure/core/internal">
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/inc/azure/core/internal/az_credentials_internal.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/inc/azure/core/internal">
@@ -298,7 +324,7 @@
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/inc/azure/core/internal/az_span_internal.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/inc/azure/core/internal">
         </file>
-        <!-- Source files -->
+        <!-- Core Source Files -->
         <file path="${AZURE_SDK_FOR_C}/sdk/src/azure/core/az_base64.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/core">
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/src/azure/core/az_context.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/core">
@@ -339,6 +365,7 @@
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/src/azure/core/az_span_private.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/core">
         </file>
+        <!-- IoT Source Files -->
 		<file path="${AZURE_SDK_FOR_C}/sdk/src/azure/iot/az_iot_adu_client.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/iot">
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/src/azure/iot/az_iot_common.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/iot">
@@ -363,24 +390,28 @@
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/src/azure/iot/az_iot_provisioning_client_sas.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/iot">
         </file>
+        <!-- Platform Source Files -->
 		<file path="${AZURE_SDK_FOR_C}/sdk/src/azure/platform/az_nohttp.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/platform">
         </file>
 		<file path="${AZURE_SDK_FOR_C}/sdk/src/azure/platform/az_posix.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-sdk-for-c/sdk/src/azure/platform">
         </file>
 
-        <!-- ===== mbedTLS (.c and .h files) ===== -->
-        <file path="${SIMPLELINK_SDK}/source/third_party/mbedTLS/ti/port/threading_alt.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport">
-        </file>
-
-        <!-- ===== AZURE IOT MIDDLEWARE (.c and .h files) ===== -->
+        <!-- ============================================================================ -->
+        <!-- AZURE IOT MIDDLEWARE FOR FREERTOS (components/azure-iot-middleware-freertos)-->
+        <!-- Linked from resources/third-party/azure-iot-middleware-freertos             -->
+        <!-- ============================================================================ -->
+        <!-- Config Templates -->
 		<file path="${AZURE_IOT_MIDDLEWARE}/config_templates/azure_iot_config.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/config_templates">
         </file>
+        <!-- Ports - coreMQTT -->
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/azure_iot_core_mqtt.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="components/azure-iot-middleware-freertos/ports/coreMQTT">
         </file>
 		<file path="${AZURE_IOT_MIDDLEWARE}/ports/coreMQTT/azure_iot_mqtt_port.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/ports/coreMQTT">
         </file>
+        <!-- Ports - mbedTLS -->
 		<file path="${AZURE_IOT_MIDDLEWARE}/ports/mbedTLS/azure_iot_jws_mbedtls.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/ports/mbedTLS">
         </file>
+        <!-- Source Files -->
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/azure_iot.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source">
         </file>
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/azure_iot_adu_client.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source">
@@ -399,6 +430,7 @@
         </file>
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/azure_iot_private.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source">
         </file>
+        <!-- Include Files -->
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/include/azure_iot_adu_client.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source/include">
         </file>
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/include/azure_iot_config_defaults.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source/include">
@@ -421,6 +453,7 @@
         </file>
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/include/azure_iot.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source/include">
         </file>
+        <!-- Interface Files -->
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/interface/azure_iot_crypto.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source/interface">
         </file>
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/interface/azure_iot_flash_platform.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source/interface">
@@ -434,7 +467,10 @@
 		<file path="${AZURE_IOT_MIDDLEWARE}/source/interface/azure_iot_transport_interface.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/azure-iot-middleware-freertos/source/interface">
         </file>
 
-        <!-- ===== IOT MIDDLEWARE FREERTOS SAMPLES (.c and .h files) ===== -->
+        <!-- ============================================================================ -->
+        <!-- IOT MIDDLEWARE FREERTOS SAMPLES (components/iot-middleware-freertos-samples)-->
+        <!-- Linked from resources/third-party/iot-middleware-freertos-samples          -->
+        <!-- ============================================================================ -->
 		<file path="${IOT_MIDDLEWARE_FREERTOS}/demos/sample_azure_iot/sample_azure_iot.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/iot-middleware-freertos-samples/demos/sample_azure_iot">
         </file>
 		<file path="${IOT_MIDDLEWARE_FREERTOS}/demos/common/azure_ca_recovery/azure_ca_recovery_mbedtls_rsa_verify.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/iot-middleware-freertos-samples/demos/sample_azure_iot">
@@ -450,13 +486,18 @@
 		<file path="${IOT_MIDDLEWARE_FREERTOS}/demos/common/connection/azure_sample_connection.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/iot-middleware-freertos-samples/demos/sample_azure_iot">
         </file>
 
-        <!-- ===== COREMQTT (.c and .h files) ===== -->
+        <!-- ============================================================================ -->
+        <!-- COREMQTT (components/coreMQTT/)                                             -->
+        <!-- Linked from resources/third-party/coreMQTT                                  -->
+        <!-- ============================================================================ -->
+        <!-- Source Files -->
 		<file path="${COREMQTT}/source/core_mqtt.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source">
         </file>
 		<file path="${COREMQTT}/source/core_mqtt_serializer.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source">
         </file>
 		<file path="${COREMQTT}/source/core_mqtt_state.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source">
         </file>
+        <!-- Include Files -->
 		<file path="${COREMQTT}/source/include/core_mqtt_config_defaults.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/include">
         </file>
 		<file path="${COREMQTT}/source/include/core_mqtt_serializer.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/include">
@@ -465,10 +506,13 @@
         </file>
 		<file path="${COREMQTT}/source/include/core_mqtt.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/include">
         </file>
+        <!-- Interface Files -->
 		<file path="${COREMQTT}/source/interface/transport_interface.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/interface">
         </file>
 
-        <!-- ===== FREERTOS LINKER SCRIPT ===== -->
+        <!-- ============================================================================ -->
+        <!-- LINKER SCRIPT                                                               -->
+        <!-- ============================================================================ -->
         <file path="../../freertos/ticlang/linker.cmd" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
     </project>
