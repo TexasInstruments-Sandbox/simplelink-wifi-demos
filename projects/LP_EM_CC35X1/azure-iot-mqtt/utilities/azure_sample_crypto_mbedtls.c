@@ -4,6 +4,7 @@
 #include "azure_sample_crypto.h"
 
 #include "threading_alt.h"
+#include "mbedtls_freertos_port.h"
 
 /* mbed TLS includes. */
 #include "mbedtls/md.h"

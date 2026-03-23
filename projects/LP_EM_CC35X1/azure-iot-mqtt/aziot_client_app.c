@@ -1302,6 +1302,7 @@ uint32_t prvIoTHubInfoGet( NetworkCredentials_t * pXNetworkCredentials,
         xTransport.pxNetworkContext = &xNetworkContext;
         xTransport.xSend = TLS_Socket_Send;
         xTransport.xRecv = TLS_Socket_Recv;
+	 xTransport.xWritev = NULL;
 
         #ifdef democonfigUSE_HSM
 
@@ -1503,6 +1504,7 @@ void prvAzureDemoTask( void * pvParameters )
                 xTransport.pxNetworkContext = &xNetworkContext;
                 xTransport.xSend = TLS_Socket_Send;
                 xTransport.xRecv = TLS_Socket_Recv;
+		  xTransport.xWritev = NULL;
 
                 /* Init IoT Hub option */
                 xResult = AzureIoTHubClient_OptionsInit( &xHubOptions );

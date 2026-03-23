@@ -14,6 +14,45 @@
 
 #include "azure_iot_mqtt.h"
 
+#include "core_mqtt_serializer.h"
+
+
+#include "core_mqtt.h"
+
+/**
+ * @brief The length of the outgoing publish records array used by the coreMQTT
+ * library to track QoS > 0 packet ACKS for outgoing publishes.
+ * Number of publishes = ulMaxPublishCount * mqttexampleTOPIC_COUNT
+ * Update in ulMaxPublishCount needs updating mqttexampleOUTGOING_PUBLISH_RECORD_LEN.
+ */
+#define mqttexampleOUTGOING_PUBLISH_RECORD_LEN            ( 15U )
+
+/**
+ * @brief The length of the incoming publish records array used by the coreMQTT
+ * library to track QoS > 0 packet ACKS for incoming publishes.
+ * Number of publishes = ulMaxPublishCount * mqttexampleTOPIC_COUNT
+ * Update in ulMaxPublishCount needs updating mqttexampleINCOMING_PUBLISH_RECORD_LEN.
+ */
+#define mqttexampleINCOMING_PUBLISH_RECORD_LEN            ( 15U )
+
+/**
+ * @brief Array to track the outgoing publish records for outgoing publishes
+ * with QoS > 0.
+ *
+ * This is passed into #MQTT_InitStatefulQoS to allow for QoS > 0.
+ *
+ */
+static MQTTPubAckInfo_t pOutgoingPublishRecords[ mqttexampleOUTGOING_PUBLISH_RECORD_LEN ];
+
+/**
+ * @brief Array to track the incoming publish records for incoming publishes
+ * with QoS > 0.
+ *
+ * This is passed into #MQTT_InitStatefulQoS to allow for QoS > 0.
+ *
+ */
+static MQTTPubAckInfo_t pIncomingPublishRecords[ mqttexampleINCOMING_PUBLISH_RECORD_LEN ];
+
 /**
  * Maps CoreMQTT errors to AzureIoTMQTT errors.
  **/
@@ -98,6 +137,15 @@ AzureIoTMQTTResult_t AzureIoTMQTT_Init( AzureIoTMQTTHandle_t xContext,
                          ( MQTTGetCurrentTimeFunc_t ) xGetTimeFunction,
                          ( MQTTEventCallback_t ) xUserCallback,
                          &xBuffer );
+    
+    if (xResult == MQTTSuccess)
+    {
+        xResult = MQTT_InitStatefulQoS( xContext,
+                                        pOutgoingPublishRecords,
+                                        mqttexampleOUTGOING_PUBLISH_RECORD_LEN,
+                                        pIncomingPublishRecords,
+                                        mqttexampleINCOMING_PUBLISH_RECORD_LEN );
+    }
 
     return prvTranslateToAzureIoTMQTTResult( xResult );
 }

@@ -33,4 +33,11 @@
 #claude
 .claude
 
+# SysConfig generated files
+ti_*.c
+ti_*.h
+*.opt
+*.genlibs
+FreeRTOSConfig.h
+
 #SDK dependencies

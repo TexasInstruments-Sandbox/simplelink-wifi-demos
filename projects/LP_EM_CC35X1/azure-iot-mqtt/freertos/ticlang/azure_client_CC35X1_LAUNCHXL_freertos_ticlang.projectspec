@@ -138,13 +138,9 @@
         </file>
         <file path="../../wifi_settings.h" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
-        <file path="../../mqtt_settings.h" openOnCreation="false" excludeFromBuild="false" action="copy">
-        </file>
         <file path="../../backoff_algorithm.h" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
         <file path="../../backoff_algorithm.c" openOnCreation="false" excludeFromBuild="false" action="copy">
-        </file>
-        <file path="../../import_nist_kw.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
         <file path="../../syscalls_stubs.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
@@ -243,10 +239,6 @@
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc/dns_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/dns_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
-        </file>
-        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc/mqtt_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
-        </file>
-        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/mqtt_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
         </file>
         <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc/tcpip_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
         </file>

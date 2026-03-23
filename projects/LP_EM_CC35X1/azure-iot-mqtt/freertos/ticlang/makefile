@@ -3,8 +3,8 @@
 # ==============================================================================
 
 # Path to SimpleLink SDK (relative to this makefile)
-SIMPLELINK_SDK_INSTALL_DIR ?= $(abspath ../../../../../../resources/simplelink-wifi-sdk)
-SIMPLELINK_SDK_DEMO_ROOT ?= $(abspath ../../../../../..)
+SIMPLELINK_SDK_INSTALL_DIR ?= $(abspath ../../../../../resources/simplelink-wifi-sdk)
+SIMPLELINK_SDK_DEMO_ROOT ?= $(abspath ../../../../..)
 
 include $(SIMPLELINK_SDK_DEMO_ROOT)/imports.mak
 
@@ -15,7 +15,7 @@ LNK = "$(TICLANG_ARMCOMPILER)/bin/tiarmclang"
 SYSCONFIG_GUI_TOOL = $(dir $(SYSCONFIG_TOOL))sysconfig_gui$(suffix $(SYSCONFIG_TOOL))
 SYSCFG_CMD_STUB = $(SYSCONFIG_TOOL) --compiler ticlang --product $(SIMPLELINK_SDK_INSTALL_DIR)/.metadata/product.json --product $(SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR)/.metadata/product.json
 SYSCFG_GUI_CMD_STUB = $(SYSCONFIG_GUI_TOOL) --compiler ticlang --product $(SIMPLELINK_SDK_INSTALL_DIR)/.metadata/product.json --product $(SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR)/.metadata/product.json
-SYSCFG_FILES := $(shell $(SYSCFG_CMD_STUB) --listGeneratedFiles --listReferencedFiles --output . ../../aziot_client_app.syscfg)
+SYSCFG_FILES := $(shell $(SYSCFG_CMD_STUB) --listGeneratedFiles --listReferencedFiles --output . ../aziot_client_app.syscfg)
 
 SYSCFG_C_FILES = $(filter %.c,$(SYSCFG_FILES))
 SYSCFG_H_FILES = $(filter %.h,$(SYSCFG_FILES))
@@ -31,7 +31,6 @@ endif
 APP_OBJECTS = \
     aziot_client_app.obj \
     backoff_algorithm.obj \
-    import_nist_kw.obj \
     syscalls_stubs.obj
 
 # Utilities
@@ -45,7 +44,6 @@ PLATFORM_OBJECTS = \
     crc.obj \
     nvocmp_cc35xx.obj \
     dns_if.obj \
-    mqtt_if.obj \
     tcpip_if.obj \
     wifi_if.obj
 
@@ -115,9 +113,7 @@ AZURE_MIDDLEWARE_OBJECTS = \
 
 # IoT Middleware Samples
 IOT_SAMPLES_OBJECTS = \
-    sample_azure_iot.obj \
-    azure_ca_recovery_mbedtls_rsa_verify.obj \
-    azure_ca_recovery_parse.obj
+    sample_azure_iot.obj
 
 # coreMQTT
 COREMQTT_OBJECTS = \
@@ -149,8 +145,8 @@ CFLAGS += -I../.. \
     -DRAM_CONTAINER \
     -DSNTP_SUPPORT \
     -DNVOCMP_POSIX_MUTEX \
-    -DMBEDTLS_CONFIG_FILE='\"config-hsm.h\"' \
-    -DMBEDTLS_PSA_CRYPTO_CONFIG_FILE='\"config-psa-crypto-hsm.h\"' \
+    -DMBEDTLS_CONFIG_FILE=\"config-hsm.h\" \
+    -DMBEDTLS_PSA_CRYPTO_CONFIG_FILE=\"config-psa-crypto-hsm.h\" \
     "-I$(SIMPLELINK_SDK_INSTALL_DIR)/source" \
     "-I$(SIMPLELINK_SDK_INSTALL_DIR)/kernel/freertos" \
     "-I$(SIMPLELINK_SDK_INSTALL_DIR)/source/ti/posix/ticlang" \
@@ -186,6 +182,8 @@ CFLAGS += -I../.. \
     "-I$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedTLS/include/mbedtls" \
     "-I$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedTLS/library" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/ns/inc" \
+    "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos" \
+    "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/ns/lwip/common/inc" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/platform/inc" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/transport" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/logging" \
@@ -198,6 +196,9 @@ CFLAGS += -I../.. \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/coreMQTT/source/interface" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/iot-middleware-freertos-samples/demos/common/connection" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/iot-middleware-freertos-samples/demos/common/utilities" \
+    "-I$(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/iot-middleware-freertos-samples/demos/common/transport" \
+    "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/transport/configs" \
+    "-I../../configs" \
     -gdwarf-3 \
     -mcpu=cortex-m33 \
     -mfloat-abi=hard \
@@ -213,9 +214,7 @@ LFLAGS += "-L$(SIMPLELINK_SDK_INSTALL_DIR)/source" \
     "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/ti/drivers/net/wifi/wifi_host_driver/lib/ticlang/wifi_host_driver.a" \
     "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/ti/drivers/net/wifi/wifi_platform/cc35xx/lib/ticlang/wifi_platform_cc35xx.a" \
     "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/ti/utils/FWU/lib/ticlang/FWU.a" \
-    "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedtls/ti/lib/ticlang/m33f/libmbedcrypto.a" \
-    "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedtls/ti/lib/ticlang/m33f/libmbedtls.a" \
-    "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedtls/ti/lib/ticlang/m33f/libmbedx509.a" \
+    "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedtls/ti/lib/ticlang/m33f/mbedtls.a" \
     -Wl,--reread_libs \
     ti_utils_build_linker.cmd.genlibs \
     linker.cmd \
@@ -235,7 +234,7 @@ postbuild: $(NAME).out
 $(SYSCFG_FILES): syscfg
 	@ echo "SysConfig generation complete"
 
-syscfg: ../../aziot_client_app.syscfg
+syscfg: ../aziot_client_app.syscfg
 	@ echo "Generating configuration files..."
 	$(V) $(SYSCFG_CMD_STUB) --output $(@D) $<
 
@@ -245,10 +244,6 @@ aziot_client_app.obj: ../../aziot_client_app.c $(SYSCFG_H_FILES)
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
 backoff_algorithm.obj: ../../backoff_algorithm.c $(SYSCFG_H_FILES)
-	@ echo "Building $@"
-	$(V) $(CC) $(CFLAGS) -c $< -o $@
-
-import_nist_kw.obj: ../../import_nist_kw.c $(SYSCFG_H_FILES)
 	@ echo "Building $@"
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
@@ -279,10 +274,6 @@ nvocmp_cc35xx.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/platform/LP_EM_CC35X
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
 dns_if.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/ns/lwip/dns_if.c $(SYSCFG_H_FILES)
-	@ echo "Building $@"
-	$(V) $(CC) $(CFLAGS) -c $< -o $@
-
-mqtt_if.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/ns/lwip/mqtt_if.c $(SYSCFG_H_FILES)
 	@ echo "Building $@"
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
@@ -324,7 +315,7 @@ syslog.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/platform/LP_EM_CC35X1/syslo
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
 # FreeRTOS
-main_freertos.obj: ../../freertos/main_freertos.c $(SYSCFG_H_FILES)
+main_freertos.obj: ../main_freertos.c $(SYSCFG_H_FILES)
 	@ echo "Building $@"
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
@@ -385,8 +376,148 @@ az_span.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/s
 	@ echo "Building $@"
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
-# Azure SDK for C - IoT (shortened to fit - continuing pattern for remaining files)
-# ... (Add remaining Azure SDK IoT object rules following same pattern)
+# Azure SDK for C - IoT
+az_iot_adu_client.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_adu_client.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_common.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_common.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client_c2d.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client_c2d.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client_commands.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client_commands.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client_methods.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client_methods.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client_properties.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client_properties.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client_sas.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client_sas.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client_telemetry.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client_telemetry.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_hub_client_twin.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_hub_client_twin.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_provisioning_client.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_provisioning_client.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_iot_provisioning_client_sas.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/iot/az_iot_provisioning_client_sas.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+# Azure SDK for C - Platform
+az_nohttp.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/platform/az_nohttp.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+az_posix.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-sdk-for-c/sdk/src/azure/platform/az_posix.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+# Azure IoT Middleware
+azure_iot.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_adu_client.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot_adu_client.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_hub_client.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot_hub_client.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_hub_client_properties.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot_hub_client_properties.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_json_reader.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot_json_reader.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_json_writer.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot_json_writer.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_message.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot_message.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_provisioning_client.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/source/azure_iot_provisioning_client.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_core_mqtt.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/ports/coreMQTT/azure_iot_core_mqtt.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+azure_iot_jws_mbedtls.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/ports/mbedTLS/azure_iot_jws_mbedtls.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+# IoT Middleware Samples
+sample_azure_iot.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/iot-middleware-freertos-samples/demos/sample_azure_iot/sample_azure_iot.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+# coreMQTT
+core_mqtt.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/coreMQTT/source/core_mqtt.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+core_mqtt_serializer.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/coreMQTT/source/core_mqtt_serializer.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+core_mqtt_state.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/coreMQTT/source/core_mqtt_state.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+# Transport
+transport_socket.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/transport/transport_socket.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+transport_tls_socket_using_mbedtls.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/transport/transport_tls_socket_using_mbedtls.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+sockets_wrapper_lwip.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/transport/sockets_wrapper_lwip.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+mbedtls_freertos_port.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/transport/mbedtls_freertos_port.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+threading_alt.obj: $(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedtls/ti/port/threading_alt.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+# Build rules for syscfg-generated files
+%.obj: %.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
 $(NAME).out: $(OBJECTS)
 	@ echo "Linking $@"
