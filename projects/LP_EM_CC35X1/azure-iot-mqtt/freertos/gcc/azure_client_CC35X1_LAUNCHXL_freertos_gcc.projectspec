@@ -413,7 +413,7 @@
 		<file path="../../components/azure-iot-middleware-freertos/config_templates/azure_iot_config.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="components/azure-iot-middleware-freertos/config_templates">
         </file>
         <!-- Ports - coreMQTT -->
-		<file path="../../components/azure-iot-middleware-freertos/ports/coreMQTT/azure_iot_core_mqtt.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="components/azure-iot-middleware-freertos/ports/coreMQTT">
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/azure_iot_core_mqtt.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="components/azure-iot-middleware-freertos/ports/coreMQTT">
         </file>
 		<file path="../../components/azure-iot-middleware-freertos/ports/coreMQTT/azure_iot_mqtt_port.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="components/azure-iot-middleware-freertos/ports/coreMQTT">
         </file>

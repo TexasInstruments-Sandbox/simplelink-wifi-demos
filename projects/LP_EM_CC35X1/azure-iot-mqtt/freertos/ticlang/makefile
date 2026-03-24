@@ -139,7 +139,9 @@ NAME = azure_iot_client
 
 CFLAGS += -I../.. \
     -I. \
+    -I.. \
     $(addprefix @,$(SYSCFG_OPT_FILES)) \
+    -include FreeRTOSConfigCustom.h \
     -Ofast \
     -DCC35XX \
     -DRAM_CONTAINER \
@@ -182,6 +184,7 @@ CFLAGS += -I../.. \
     "-I$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedTLS/include/mbedtls" \
     "-I$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedTLS/library" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/ns/inc" \
+    "-I../../ti_modified_headers" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/ns/lwip/common/inc" \
     "-I$(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/platform/inc" \
@@ -467,7 +470,7 @@ azure_iot_provisioning_client.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-p
 	@ echo "Building $@"
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
-azure_iot_core_mqtt.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/resources/third-party/azure-iot-middleware-freertos/ports/coreMQTT/azure_iot_core_mqtt.c $(SYSCFG_H_FILES)
+azure_iot_core_mqtt.obj: $(SIMPLELINK_SDK_DEMO_ROOT)/src/freertos/transport/azure_iot_core_mqtt.c $(SYSCFG_H_FILES)
 	@ echo "Building $@"
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
@@ -515,6 +518,26 @@ threading_alt.obj: $(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/mbedtls/ti/p
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
 # Build rules for syscfg-generated files
+ti_drivers_config.obj: ti_drivers_config.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+ti_freertos_config.obj: ti_freertos_config.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+ti_freertos_portable_config.obj: ti_freertos_portable_config.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+ti_flash_map_config.obj: ti_flash_map_config.c $(SYSCFG_H_FILES)
+	@ echo "Building $@"
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
+
+# Make syscfg-generated files depend on syscfg target
+ti_drivers_config.c ti_freertos_config.c ti_freertos_portable_config.c ti_flash_map_config.c: syscfg
+
+# Generic pattern rule for other .obj files
 %.obj: %.c $(SYSCFG_H_FILES)
 	@ echo "Building $@"
 	$(V) $(CC) $(CFLAGS) -c $< -o $@

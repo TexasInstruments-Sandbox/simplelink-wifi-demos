@@ -41,6 +41,7 @@
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
+#include "task.h"
 
 /* TLS transport header. */
 #include "transport_tls_socket.h"

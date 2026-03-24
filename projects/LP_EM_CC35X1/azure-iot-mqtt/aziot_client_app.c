@@ -22,6 +22,7 @@
 #include "uart_term.h"
 #include "time.h"
 #include "sntp_wrapper.h"
+#include "date_time_service.h"
 
 #import "dns_if.h"
 #include "lwip/pbuf.h"
@@ -121,6 +122,26 @@ static ip4addr_t gIp4Addr = 0, gIp4Mask = 0, gIp4GW = 0;
 void *hWifiConn;
 static bool s_is_connected_to_internet = false;
 AzureIoTHubClient_t xAzureIoTHubClient;
+
+/*-----------------------------------------------------------*/
+/* Random number generation for backoff algorithm */
+static UBaseType_t ulNextRand;
+
+UBaseType_t uxRand( void )
+{
+    const uint32_t ulMultiplier = 0x015a4e35UL, ulIncrement = 1UL;
+
+    /*
+     * Utility function to generate a pseudo random number.
+     *
+     * !!!NOTE!!!
+     * This is not a secure method of generating a random number.  Production
+     * devices should use a True Random Number Generator (TRNG).
+     */
+    ulNextRand = ( ulMultiplier * ulNextRand ) + ulIncrement;
+    return( ( int ) ( ulNextRand >> 16UL ) & 0x7fffUL );
+}
+/*-----------------------------------------------------------*/
 
 static void my_debug(void *ctx, int level,
                      const char *file, int line,

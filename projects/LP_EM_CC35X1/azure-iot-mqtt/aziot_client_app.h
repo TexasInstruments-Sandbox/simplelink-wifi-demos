@@ -320,4 +320,8 @@ typedef enum
 #define WLAN_IPV6_VAL(add_1,add_2)                     ((((_u32)add_1 << 16) & 0xFFFF0000) | (((_u32)add_2 ) & 0x0000FFFF) )
 #define WLAN_IPV4_BYTE(val,index)                      ( (val >> (index*8)) & 0xFF )
 
+/* Random number generation for backoff algorithm */
+#include "FreeRTOS.h"
+UBaseType_t uxRand( void );
+
 #endif /* __NETWORK_TERMINAL_H__ */
