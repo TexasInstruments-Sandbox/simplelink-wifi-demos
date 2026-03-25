@@ -20,8 +20,6 @@
         ignoreDefaultCCSSettings="false"
         products="com.ti.SIMPLELINK_WIFI_SDK;com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig"
         compilerBuildOptions="
-            -I${PROJECT_ROOT}
-            -I${PROJECT_ROOT}/${ConfigName}
             -O3
             -DCC35XX
             -DRAM_CONTAINER
@@ -64,24 +62,31 @@
 			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/configs
 			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/include/mbedtls
 			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/library
-			-I${PROJECT_ROOT}/adaptation
+            -I${TI_MODIFIED_HEADERS}
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/common/inc
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging
+            -I${AZURE_SDK_FOR_C}/sdk/inc
+            -I${AZURE_IOT_MIDDLEWARE}/source/include
+            -I${AZURE_IOT_MIDDLEWARE}/source/interface
+            -I${AZURE_IOT_MIDDLEWARE}/ports/coreMQTT
+            -I${AZURE_IOT_MIDDLEWARE}/source
+            -I${COREMQTT}/source/include
+            -I${COREMQTT}/source/interface
+            -I${IOT_MIDDLEWARE_FREERTOS}/demos/common/connection
+            -I${IOT_MIDDLEWARE_FREERTOS}/demos/common/utilities
+            -I${IOT_MIDDLEWARE_FREERTOS}/demos/common/transport
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs
+            -I../../configs
+            -I${PROJECT_ROOT}/adaptation
             -I${PROJECT_ROOT}/configs
             -I${PROJECT_ROOT}/connection
             -I${PROJECT_ROOT}/logging
             -I${PROJECT_ROOT}/utilities
             -I${PROJECT_ROOT}
-            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc
-            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc
-            -I${IOT_MIDDLEWARE_FREERTOS}/demos/common/connection
-            -I${IOT_MIDDLEWARE_FREERTOS}/demos/common/utilities
-            -I${IOT_MIDDLEWARE_FREERTOS}/demos/common/transport
-            -I${AZURE_IOT_MIDDLEWARE}/source/interface
-            -I${AZURE_IOT_MIDDLEWARE}/ports/coreMQTT
-            -I${AZURE_IOT_MIDDLEWARE}/source/include
-            -I${AZURE_IOT_MIDDLEWARE}/source
-            -I${COREMQTT}/source/interface
-            -I${COREMQTT}/source/include
-            -I${AZURE_SDK_FOR_C}/sdk/inc
             -mcpu=cortex-m33
             -mthumb
             -std=c99
@@ -132,6 +137,7 @@
         <!-- ===== PATH VARIABLES ===== -->
         <pathVariable name="SIMPLELINK_SDK_DEMO_ROOT" path="../../../../.." scope="project"/>
         <pathVariable name="SIMPLELINK_SDK" path="../../../../../resources/simplelink-wifi-sdk" scope="project"/>
+        <pathVariable name="TI_MODIFIED_HEADERS" path="../../ti_modified_headers" scope="project"/>
         <pathVariable name="IOT_MIDDLEWARE_FREERTOS" path="../../../../../resources/third-party/iot-middleware-freertos-samples" scope="project"/>
         <pathVariable name="AZURE_IOT_MIDDLEWARE" path="../../../../../resources/third-party/azure-iot-middleware-freertos" scope="project"/>
         <pathVariable name="COREMQTT" path="../../../../../resources/third-party/coreMQTT" scope="project"/>
