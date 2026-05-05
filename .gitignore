@@ -41,3 +41,6 @@ ti_*.h
 FreeRTOSConfig.h
 
 #SDK dependencies
+
+
+*.DS_Store
