@@ -1,315 +1,857 @@
-# SimpleLink Wi-Fi Demos
-
-Example applications demonstrating wireless connectivity for Texas Instruments CC35xx wireless MCUs.
-
-**Supported Hardware:** [LP-EM-CC35X1](https://www.ti.com/tool/LP-EM-CC35X1) LaunchPad (supports CC3500, CC3501, CC3550, CC3551)
-
----
+# AWS IoT Plugin Architecture for CC3551 (SimpleLink Wi-Fi Demos)
 
 ## Overview
 
-This repository provides production-ready examples demonstrating:
-- Cloud connectivity (Azure IoT, AWS IoT, HTTP/HTTPS clients)
-- FreeRTOS integration with SimpleLink SDK
-- Secure TLS communication with hardware-accelerated crypto
-- Network stack configuration and optimization
+This document describes the **AWS IoT plugin architecture** for the CC3551 microcontroller within the **SimpleLink Wi-Fi Demos** project. The plugin provides a production-ready AWS IoT Core integration with support for:
+
+- **X.509 Mutual TLS Authentication** — Certificate-based secure connection
+- **MQTT Telemetry** — Periodic sensor data publishing
+- **Device Shadow** — Remote device state synchronization and control
+- **coreMQTT Library** — FreeRTOS-compatible MQTT protocol stack
 
 ---
 
-## Repository Structure
+## Architecture Overview
+
+### High-Level Component Stack
 
 ```
-simplelink_wi-fi_demos/
-├── projects/
-│   └── LP_EM_CC35X1/           # Examples for CC3500/CC3501/CC3550/CC3551
-│       └── azure-iot-mqtt/     # Azure IoT Hub MQTT client example
-├── src/freertos/               # Shared platform abstraction layers
-│   ├── ns/                     # Network stack interfaces (DNS, MQTT, TCP/IP, Wi-Fi)
-│   ├── platform/               # Platform-specific implementations
-│   ├── transport/              # TLS transport layer
-│   └── logging/                # Logging utilities
-├── resources/
-│   ├── simplelink-wifi-sdk/    # SimpleLink Wi-Fi SDK (git submodule)
-│   └── third-party/            # Third-party libraries (git submodules)
-├── imports.mak                 # Build tool paths configuration
-└── Makefile                    # Root-level build system
+┌──────────────────────────────────────────────────────────────┐
+│  Application Layer (User Code)                               │
+│  ├─ AwsIotTelemetry_Connect/Run/Disconnect                   │
+│  ├─ AwsIotLed_Subscribe/OnMqttPublish                         │
+│  └─ Custom MQTT operations                                   │
+└──────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│  AWS IoT Cloud Abstraction Layer                             │
+│  Location: src/freertos/cloud/aws/                           │
+│  ├─ aws_iot_telemetry.{c,h}    (Telemetry & subscription)   │
+│  ├─ aws_iot_led.{c,h}          (Shadow-based LED control)   │
+│  └─ aws_iot_mqtt.h             (Public API)                  │
+└──────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│  coreMQTT Adaptation Layer (AWS-specific)                    │
+│  Location: src/freertos/transport/                           │
+│  ├─ aws_iot_core_mqtt.c        (MQTT wrapper for AWS)       │
+│  └─ AwsIoTMQTT_Init()           (Initialize with QoS tracking)
+└──────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Transport Layer (TLS/TCP)                                   │
+│  Location: src/freertos/transport/                           │
+│  ├─ transport_tls_socket_using_mbedtls.c                     │
+│  ├─ transport_socket.c         (Socket abstraction)          │
+│  ├─ sockets_wrapper_lwip.c     (LwIP TCP/IP stack)           │
+│  ├─ mbedtls_freertos_port.c    (mbedTLS thread safety)       │
+│  └─ Transport configs                                        │
+└──────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│  SimpleLink Wi-Fi SDK                                        │
+│  Location: resources/simplelink-wifi-sdk/                    │
+│  ├─ Wi-Fi drivers (CC3551 hardware)                          │
+│  ├─ LwIP network stack integration                           │
+│  └─ Hardware crypto acceleration (PSA Crypto)               │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-**Key Concepts:**
-- `src/freertos/` = Shared code used across multiple examples
-- `projects/*/` = Example applications with example-specific code
-- `resources/` = External dependencies tracked as git submodules
+### Data Flow: Telemetry Publishing
+
+```
+┌──────────────┐
+│   Sensors    │  (Temperature, Humidity via I2C)
+└──────┬───────┘
+       │ AwsIotTelemetry_Init()
+       ▼
+┌──────────────────────────┐
+│  JSON Telemetry Payload  │  (e.g., {"temp": 25.5})
+│  (512 bytes max)         │
+└──────┬───────────────────┘
+       │ AwsIotTelemetry_Run() every 10s
+       ▼
+┌──────────────────────────────────────────────┐
+│  MQTT_Publish(topic, payload, QoS=1)         │
+│  Topic: "AwsTI/{thingName}/telemetry"        │
+└──────┬───────────────────────────────────────┘
+       │ coreMQTT stack (aws_iot_core_mqtt.c)
+       ▼
+┌──────────────────────────────────────────────┐
+│  TLS Encrypt & TCP Send                      │
+│  (mTLS handshake on first connect)           │
+└──────┬───────────────────────────────────────┘
+       │
+       ▼
+ AWS IoT Core (MQTT Broker)
+```
+
+### Data Flow: Remote LED Control (Device Shadow)
+
+```
+ AWS IoT Core (Device Shadow Service)
+       │
+       │ User updates desired state:
+       │ {"state": {"desired": {"green_led": "on", "blue_led": "off", "red_led": "off"}}}
+       │
+       ▼
+┌────────────────────────────┐
+│  Shadow Delta Topic        │
+│  $aws/things/{name}/       │
+│  shadow/update/delta       │
+└────────┬───────────────────┘
+         │ TLS/TCP decrypt
+         ▼
+┌────────────────────────────────────────────┐
+│  MQTT_ProcessLoop() receives PUBLISH       │
+│  coreMQTT callback invokes user handler    │
+└────────┬───────────────────────────────────┘
+         │ AwsIotLed_OnMqttPublish()
+         ▼
+┌────────────────────────────────────────────┐
+│  Parse JSON delta: {green_led, blue_led,   │
+│  red_led states}                           │
+└────────┬───────────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────────────────────┐
+│  Control GPIO (LEDs on/off)                │
+└────────┬───────────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────────────────────────┐
+│  Publish updated state to shadow/update topic  │
+│  Reported: {green_led, blue_led, red_led}     │
+└────────────────────────────────────────────────┘
+```
 
 ---
 
-## Supported Devices
+## Directory Structure
 
-| Device | Part Number | Features |
-|--------|-------------|----------|
-| **CC3500** | CC3500MRGKT | 2.4 GHz Wi-Fi 6, Arm Cortex-M33, 2MB Flash |
-| **CC3501** | CC3501MRGKT | 2.4 GHz Wi-Fi 6 + Bluetooth LE 5.4, Arm Cortex-M33, 2MB Flash |
-| **CC3550** | CC3550MRGKT | 2.4 GHz + 5 GHz Wi-Fi 6, Arm Cortex-M33, 2MB Flash |
-| **CC3551** | CC3551MRGKT | 2.4 GHz + 5 GHz Wi-Fi 6 + Bluetooth LE 5.4, Arm Cortex-M33, 2MB Flash |
-
-All devices share the same LaunchPad form factor: **LP-EM-CC35X1**
+```
+aws-osprey/
+├── simplelink_wi-fi_demos/
+│   ├── README.md                                  # Main project README
+│   ├── .gitmodules                               # Submodule definitions
+│   ├── Makefile                                  # Root-level build system
+│   ├── imports.mak                               # Build tool paths
+│   │
+│   ├── projects/
+│   │   └── LP_EM_CC35X1/
+│   │       └── (Example projects go here)
+│   │
+│   ├── src/freertos/
+│   │   │
+│   │   ├── cloud/
+│   │   │   └── aws/                              # AWS Cloud Abstraction
+│   │   │       ├── aws_iot_telemetry.c           # Telemetry publisher
+│   │   │       ├── aws_iot_telemetry.h
+│   │   │       ├── aws_iot_led.c                 # Shadow-based LED control
+│   │   │       ├── aws_iot_led.h
+│   │   │       └── aws_iot_mqtt.h                # Public AWS API
+│   │   │
+│   │   ├── transport/
+│   │   │   ├── aws/                              # AWS-specific adaptation
+│   │   │   │   └── (TLS/MQTT configs for AWS)
+│   │   │   ├── aws_iot_core_mqtt.c               # MQTT wrapper
+│   │   │   ├── transport_tls_socket_using_mbedtls.c
+│   │   │   ├── transport_socket.c
+│   │   │   ├── sockets_wrapper_lwip.c
+│   │   │   ├── mbedtls_freertos_port.c
+│   │   │   ├── mbedtls_freertos_port.h
+│   │   │   └── configs/
+│   │   │       └── (Transport config headers)
+│   │   │
+│   │   ├── ns/                                   # Network stack abstraction
+│   │   │   └── (DNS, TCP/IP, Wi-Fi interfaces)
+│   │   │
+│   │   ├── logging/                              # Logging utilities
+│   │   │
+│   │   └── platform/                             # Platform-specific code
+│   │
+│   ├── resources/
+│   │   ├── simplelink-wifi-sdk/                  # TI SDK (git submodule)
+│   │   │   ├── (CC3551 drivers, crypto, HAL)
+│   │   │   └── (Wi-Fi firmware, LwIP integration)
+│   │   │
+│   │   └── third-party/                          # External libraries
+│   │       ├── coreMQTT/                         # MQTT 3.1.1 protocol
+│   │       ├── coreJSON/                         # JSON parsing/generation
+│   │       ├── backoffAlgorithm/                 # Reconnection backoff
+│   │       └── coreHTTP/                         # (Future HTTP support)
+│   │
+│   └── (Additional utility directories)
+```
 
 ---
 
-## Prerequisites
+## Key Components
 
-Install these tools before building:
+### 1. AWS IoT Telemetry Module (`aws_iot_telemetry.{c,h}`)
 
-| Tool | Version | Purpose | Download |
-|------|---------|---------|----------|
-| **Code Composer Studio** | 12.8.0+ | IDE, TI Clang compiler, debugger | [ti.com/tool/CCSTUDIO](https://www.ti.com/tool/CCSTUDIO) |
-| **SysConfig** | 1.20.0+ | Pin/peripheral configuration | Bundled with CCS |
-| **Git** | 2.13+ | Submodule support | [git-scm.com](https://git-scm.com/downloads) |
-| **GNU Make** | Any | Build automation | Pre-installed (Linux/macOS)<br>Windows: [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm) |
-| **CMake** | 3.21+ | SDK build system | [cmake.org](https://cmake.org/download/) |
-| **Python** | 3.7+ | Build scripts | [python.org](https://www.python.org/downloads/) |
+**Purpose:** Connects to AWS IoT Core and periodically publishes sensor telemetry.
 
-**Optional (for GCC builds):**
-- [ARM GCC 13.2+](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) - Set `GCC_ARMCOMPILER` in `imports.mak`
+**Key Functions:**
+- `AwsIotTelemetry_Init()` — Initialize I2C sensors and telemetry system
+- `AwsIotTelemetry_Connect()` — Establish mTLS MQTT connection to AWS
+- `AwsIotTelemetry_Run()` — Blocking loop that publishes telemetry every 10 seconds
+- `AwsIotTelemetry_Disconnect()` — Clean up MQTT and TLS connections
+- `AwsIotTelemetry_GetMqttCtx()` — Get shared MQTT context (for LED module, OTA, etc.)
+- `AwsIotTelemetry_RegisterPublishCallback()` — Subscribe to incoming messages
+- `AwsIotTelemetry_RegisterTickCallback()` — Periodic non-blocking operations
+
+**Configuration:**
+- **Telemetry Interval:** `AWS_IOT_TELEMETRY_PERIOD_MS` (default: 10000 ms)
+- **Topic Prefix:** `AWS_IOT_TELEMETRY_TOPIC_PREFIX` (default: "AwsTI")
+- **JSON Payload Size:** `AWS_IOT_TELEMETRY_JSON_MAX_LEN` (512 bytes)
+
+**Typical Usage:**
+```c
+// After WiFi connection
+AwsIotTelemetry_Init();          // Initialize sensors
+AwsIotTelemetry_Connect();       // Connect to AWS IoT Core
+AwsIotTelemetry_Run();           // Blocking telemetry loop (returns on error)
+AwsIotTelemetry_Disconnect();    // Clean shutdown
+```
+
+### 2. AWS IoT LED Shadow Module (`aws_iot_led.{c,h}`)
+
+**Purpose:** Remote LED control via AWS IoT Device Shadow (desired ↔ reported states).
+
+**Key Functions:**
+- `AwsIotLed_Init()` — Cache MQTT context and build shadow topic strings
+- `AwsIotLed_Subscribe()` — Subscribe to shadow delta and state topics
+- `AwsIotLed_RequestCurrentState()` — Fetch current shadow from AWS
+- `AwsIotLed_OnMqttPublish()` — Handle incoming shadow PUBLISH messages
+
+**Shadow Topics:**
+- **Delta (desired ≠ reported):** `$aws/things/{name}/shadow/update/delta`
+- **Get accepted (response):** `$aws/things/{name}/shadow/get/accepted`
+- **Update (publish state):** `$aws/things/{name}/shadow/update`
+
+**Shadow Document Format:**
+```json
+{
+  "state": {
+    "desired": {
+      "green_led": "on",
+      "blue_led": "off",
+      "red_led": "off"
+    },
+    "reported": {
+      "green_led": "on",
+      "blue_led": "off",
+      "red_led": "off"
+    }
+  }
+}
+```
+
+**Typical Usage:**
+```c
+// After AwsIotTelemetry_Connect() succeeds
+MQTTContext_t *pCtx = AwsIotTelemetry_GetMqttCtx();
+AwsIotLed_Init(pCtx);
+AwsIotLed_Subscribe();
+AwsIotLed_RequestCurrentState();
+
+// Register with telemetry callback dispatcher
+AwsIotTelemetry_RegisterPublishCallback(AwsIotLed_OnMqttPublish);
+```
+
+### 3. MQTT Adaptation Layer (`aws_iot_core_mqtt.c`)
+
+**Purpose:** Wraps coreMQTT for AWS IoT, handling QoS state tracking.
+
+**Key Functions:**
+- `AwsIoTMQTT_Init()` — Initialize MQTT context with stateful QoS support
+  - Sets up outgoing publish records (15 slots)
+  - Sets up incoming publish records (15 slots)
+  - Enables QoS 1/2 acknowledgment tracking
+
+**Config:**
+- `mqttexampleOUTGOING_PUBLISH_RECORD_LEN` = 15
+- `mqttexampleINCOMING_PUBLISH_RECORD_LEN` = 15
+
+### 4. Transport Layer (`src/freertos/transport/`)
+
+**Components:**
+- **`transport_tls_socket_using_mbedtls.c`** — TLS handshake and encryption (mTLS)
+- **`transport_socket.c`** — TCP socket abstraction
+- **`sockets_wrapper_lwip.c`** — LwIP TCP/IP stack integration
+- **`mbedtls_freertos_port.c`** — Thread-safe mbedTLS for FreeRTOS
+
+**Features:**
+- X.509 certificate verification
+- Mutual TLS (client certificate + server certificate validation)
+- Hardware crypto acceleration via PSA Crypto (CC3551 support)
+- FreeRTOS thread safety (mutexes for concurrent TLS operations)
 
 ---
 
-## Getting Started
+## AWS IoT Core Setup: Tokens, Topics, Policies
 
-### 1. Clone Repository
+### 1. Prerequisites
+
+Before connecting your CC3551 device, you must set up AWS IoT Core resources:
+
+1. **AWS Account** with IoT Core access
+2. **AWS CLI** configured with credentials
+3. **Device Certificate & Private Key** (X.509)
+4. **Root CA Certificate** from AWS
+5. **IoT Thing** representing your device
+6. **IoT Policy** restricting device permissions
+
+---
+
+### 2. Step-by-Step AWS IoT Console Setup
+
+#### Step 1: Create a Certificate
+
+**Via AWS IoT Console:**
+
+1. Navigate to [AWS IoT Console](https://console.aws.amazon.com/iot/home)
+2. Go to **Certificates** (left sidebar)
+3. Click **Create certificate**
+4. Select **Create certificate** (AWS will auto-generate)
+5. Download files:
+   - `certificate.pem`
+   - `private.key`
+   - `public.key`
+   - `AmazonRootCA1.pem` (or copy from [AWS Trust Services](https://www.amazontrust.com/repository/AmazonRootCA1.pem))
+6. Click **Activate** to enable the certificate
+7. **Save the Certificate ARN** (e.g., `arn:aws:iot:us-east-1:123456789012:cert/abcd1234...`)
+
+**Via AWS CLI:**
 
 ```bash
-# Clone with all submodules
-git clone --recurse-submodules https://github.com/TexasInstruments/simplelink_wi-fi_demos.git
-cd simplelink_wi-fi_demos
+# Create and activate a certificate
+aws iot create-keys-and-certificate \
+  --set-as-active \
+  --certificate-pem-outfile certificate.pem \
+  --private-key-outfile private.key \
+  --public-key-outfile public.key
 
-# Verify submodules initialized (no - or + prefixes)
-git submodule status
+# Download root CA
+wget https://www.amazontrust.com/repository/AmazonRootCA1.pem
+
+# Save the certificateArn from the output
 ```
 
-<details>
-<summary>If you cloned without --recurse-submodules</summary>
+#### Step 2: Create an IoT Thing
+
+**Via AWS IoT Console:**
+
+1. Go to **Manage** → **Things** (left sidebar)
+2. Click **Create thing**
+3. Enter Thing Name: `DevMac_{MAC_ADDRESS}` (e.g., `DevMac_AABBCCDDEEFF`)
+4. Click **Create**
+
+**Via AWS CLI:**
 
 ```bash
-git submodule init
-git submodule update
-```
-</details>
-
----
-
-### 2. Configure Build Tools
-
-Edit `imports.mak` and set paths to your installed tools:
-
-**Linux/macOS Example:**
-```makefile
-SYSCONFIG_TOOL      ?= /home/username/ti/ccs1280/ccs/utils/sysconfig_1.20.0/sysconfig_cli.sh
-CMAKE               ?= /usr/local/bin/cmake
-PYTHON              ?= python3
-TICLANG_ARMCOMPILER ?= /home/username/ti/ccs1280/ccs/tools/compiler/ti-cgt-armllvm_4.0.0.LTS
-GCC_ARMCOMPILER     ?= /usr/local/gcc-arm-none-eabi-13.2/bin
+aws iot create-thing --thing-name DevMac_AABBCCDDEEFF
 ```
 
-**Windows Example:**
-```makefile
-SYSCONFIG_TOOL      ?= C:/ti/ccs1280/ccs/utils/sysconfig_1.20.0/sysconfig_cli.bat
-CMAKE               ?= C:/Program Files/CMake/bin/cmake.exe
-PYTHON              ?= python
-TICLANG_ARMCOMPILER ?= C:/ti/ccs1280/ccs/tools/compiler/ti-cgt-armllvm_4.0.0.LTS
-GCC_ARMCOMPILER     ?= C:/gcc-arm-none-eabi-13.2/bin
-```
+#### Step 3: Attach Certificate to Thing
 
-**Important:** Use absolute paths, no spaces, forward slashes recommended.
+**Via AWS IoT Console:**
 
----
+1. Open the certificate you created
+2. Click **Actions** → **Attach thing**
+3. Select `DevMac_AABBCCDDEEFF` (your thing name)
+4. Click **Attach**
 
-### 3. Build SDK Dependencies
-
-From the repository root, build the SimpleLink SDK libraries:
+**Via AWS CLI:**
 
 ```bash
-# Option 1: Build all dependencies for TI Clang (default)
-make
-
-# Option 2: Build all dependencies for GCC
-make build-all-gcc
-
-# Option 3: Build dependencies individually
-make build-sdk-ticlang        # SimpleLink SDK with TI Clang
-make build-mbedtls-ticlang    # mbedTLS library with TI Clang
+aws iot attach-thing-principal \
+  --thing-name DevMac_AABBCCDDEEFF \
+  --principal <certificateArn>
 ```
 
-**Expected build time:** 4-7 minutes total
+#### Step 4: Create an IoT Policy
 
----
+**Via AWS IoT Console:**
 
-### 4. Build Examples
+1. Go to **Certificates** → **Policies** (or **Secure** → **Policies**)
+2. Click **Create policy**
+3. Enter Policy Name: `cc3551-policy`
+4. Paste the policy document below
+5. Click **Create**
 
-#### Option A: Command Line (Makefile)
+**Policy Document (JSON):**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "iot:Connect",
+      "Resource": "arn:aws:iot:us-east-1:123456789012:client/DevMac_*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Publish",
+      "Resource": [
+        "arn:aws:iot:us-east-1:123456789012:topic/AwsTI/*",
+        "arn:aws:iot:us-east-1:123456789012:topic/$aws/things/DevMac_*/shadow/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Subscribe",
+      "Resource": [
+        "arn:aws:iot:us-east-1:123456789012:topicfilter/$aws/things/DevMac_*/shadow/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Receive",
+      "Resource": [
+        "arn:aws:iot:us-east-1:123456789012:topic/$aws/things/DevMac_*/shadow/*"
+      ]
+    }
+  ]
+}
+```
+
+**Replace:**
+- `us-east-1` with your AWS region
+- `123456789012` with your AWS Account ID
+- `DevMac_*` allows any device with this naming pattern
+
+**Via AWS CLI:**
 
 ```bash
-# Build azure-iot-mqtt example with TI Clang
-make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang
+# Create policy file
+cat > policy.json <<'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "iot:Connect",
+      "Resource": "arn:aws:iot:us-east-1:123456789012:client/DevMac_*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Publish",
+      "Resource": [
+        "arn:aws:iot:us-east-1:123456789012:topic/AwsTI/*",
+        "arn:aws:iot:us-east-1:123456789012:topic/$aws/things/DevMac_*/shadow/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Subscribe",
+      "Resource": [
+        "arn:aws:iot:us-east-1:123456789012:topicfilter/$aws/things/DevMac_*/shadow/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Receive",
+      "Resource": [
+        "arn:aws:iot:us-east-1:123456789012:topic/$aws/things/DevMac_*/shadow/*"
+      ]
+    }
+  ]
+}
+EOF
 
-# Build azure-iot-mqtt example with GCC
-make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=gcc
-
-# Or navigate to example directory
-cd projects/LP_EM_CC35X1/azure-iot-mqtt/freertos/ticlang
-make
+# Create policy
+aws iot create-policy \
+  --policy-name cc3551-policy \
+  --policy-document file://policy.json
 ```
 
-#### Option B: Code Composer Studio
+#### Step 5: Attach Policy to Certificate
 
-1. File → Import → CCS Projects
-2. Browse to: `projects/LP_EM_CC35X1/azure-iot-mqtt/freertos/ticlang/`
-3. Select: `azure_client_CC35X1_LAUNCHXL_freertos_ticlang.projectspec`
-4. Click Finish, then Build Project (Ctrl+B / Cmd+B)
+**Via AWS IoT Console:**
 
----
+1. Open the certificate
+2. Click **Actions** → **Attach policy**
+3. Select `cc3551-policy`
+4. Click **Attach**
 
-## Examples
-
-| Example | Description | Cloud Provider |
-|---------|-------------|----------------|
-| **azure-iot-mqtt** | Connect to Azure IoT Hub via MQTT with X.509 or SAS authentication | Azure |
-
-More examples coming soon (AWS IoT, HTTP clients, OTA updates).
-
----
-
-## Makefile Reference
-
-### Root Makefile Targets
+**Via AWS CLI:**
 
 ```bash
-make                    # Build all dependencies for TI Clang (default)
-make help               # Show all available targets
-
-# Build Dependencies
-make build-all-ticlang  # SDK + mbedTLS for TI Clang
-make build-all-gcc      # SDK + mbedTLS for GCC
-make build-sdk          # SimpleLink SDK only (TI Clang)
-make build-mbedtls      # mbedTLS library only (TI Clang)
-
-# Build Examples
-make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=ticlang
-make example EXAMPLE=projects/LP_EM_CC35X1/azure-iot-mqtt TOOLCHAIN=gcc
-
-# Clean
-make clean              # Clean all build artifacts
-make clean-sdk          # Clean SDK build artifacts
-make clean-mbedtls      # Clean mbedTLS build artifacts
-
-# Status
-make status             # Show what's been built
+aws iot attach-principal-policy \
+  --policy-name cc3551-policy \
+  --principal <certificateArn>
 ```
 
-### Example Makefile Targets
+#### Step 6: Get Your AWS IoT Endpoint
+
+**Via AWS IoT Console:**
+
+1. Go to **Settings** (bottom-left)
+2. Copy **Device data endpoint** (e.g., `abcd1234.iot.us-east-1.amazonaws.com`)
+
+**Via AWS CLI:**
 
 ```bash
-cd projects/LP_EM_CC35X1/azure-iot-mqtt/freertos/ticlang
-
-make                    # Build example
-make clean              # Clean example build artifacts
-make help               # Show example-specific targets
+aws iot describe-endpoint --endpoint-type iot:Data-ATS
 ```
 
 ---
 
-## Third-Party Components
+### 3. MQTT Topics and Payload Formats
 
-All third-party libraries are tracked as git submodules:
+#### Telemetry Topic
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| **simplelink-wifi-sdk** | 9.22.00.15 | TI's SimpleLink Wi-Fi SDK |
-| azure-sdk-for-c | v1.6.0-beta.1 | Azure SDK for Embedded C |
-| azure-iot-middleware-freertos | v1.2.0-beta.1 | Azure IoT FreeRTOS middleware |
-| coreMQTT | v2.3.1+ | FreeRTOS MQTT protocol library |
-| iot-middleware-freertos-samples | main | Azure IoT reference samples |
+**Topic Pattern:** `AwsTI/{thingName}/telemetry`
 
-**Note:** Some components in `projects/*/components/` contain TI-specific modifications (timeout adjustments, compiler compatibility fixes).
+**Example:** `AwsTI/DevMac_AABBCCDDEEFF/telemetry`
+
+**Payload (JSON):**
+```json
+{
+  "device_id": "DevMac_AABBCCDDEEFF",
+  "timestamp_s": 1234567890,
+  "temperature_c": "25.5",
+  "axis_X": "-120",
+  "axis_Y": "45",
+  "axis_Z": "980",
+  "battery_mv": 3700,
+  "sleep_pct": 40,
+  "uptime_s": 3600,
+  "rssi_dbm": -65,
+  "app_version": "1.0.0"
+}
+```
+
+**QoS:** 1 (At-least-once delivery)
+
+---
+
+#### Device Shadow Update Topic
+
+**Topic Pattern:** `$aws/things/{thingName}/shadow/update`
+
+**Payload (JSON - Device Reports LED State):**
+```json
+{
+  "state": {
+    "reported": {
+      "green_led": "on",
+      "blue_led": "off",
+      "red_led": "off"
+    }
+  }
+}
+```
+
+---
+
+#### Device Shadow Delta Topic (Incoming)
+
+**Topic Pattern:** `$aws/things/{thingName}/shadow/update/delta`
+
+**Payload (JSON - what AWS sends when desired ≠ reported):**
+```json
+{
+  "version": 1,
+  "state": {
+    "green_led": "on",
+    "blue_led": "off",
+    "red_led": "off"
+  }
+}
+```
+
+**Note:** AWS IoT includes additional metadata and timestamps in the full delta payload, but the device only parses the `state` fields.
+
+---
+
+#### Device Shadow Get Topic (Request)
+
+**Topic Pattern:** `$aws/things/{thingName}/shadow/get`
+
+**Request Payload:** `{}` (empty object)
+
+**Response Topic:** `$aws/things/{thingName}/shadow/get/accepted`
+
+**Response Payload (Full Shadow Document):**
+```json
+{
+  "state": {
+    "desired": {
+      "green_led": "on",
+      "blue_led": "off",
+      "red_led": "off"
+    },
+    "reported": {
+      "green_led": "on",
+      "blue_led": "off",
+      "red_led": "off"
+    },
+    "delta": {
+      "green_led": "on"
+    }
+  },
+  "metadata": {
+    "desired": {
+      "green_led": { "timestamp": 1619827200 },
+      "blue_led": { "timestamp": 1619827200 },
+      "red_led": { "timestamp": 1619827200 }
+    },
+    "reported": {
+      "green_led": { "timestamp": 1619827100 },
+      "blue_led": { "timestamp": 1619827100 },
+      "red_led": { "timestamp": 1619827100 }
+    },
+    "delta": {
+      "green_led": { "timestamp": 1619827200 }
+    }
+  },
+  "version": 5,
+  "timestamp": 1619827200
+}
+```
+
+**Note:** Delta is only present if `desired` differs from `reported`. The device parses `state.desired.*` fields from this response.
+
+---
+
+### 4. Policy Permissions Explained
+
+| Action | Resource | Purpose |
+|--------|----------|---------|
+| `iot:Connect` | `client/{thingName}` | Allow device to connect with this client ID |
+| `iot:Publish` | `topic/AwsTI/*`, `topic/$aws/things/...` | Allow publishing telemetry and shadow updates |
+| `iot:Subscribe` | `topicfilter/$aws/things/.../shadow/*` | Allow subscribing to shadow topics |
+| `iot:Receive` | `topic/$aws/things/.../shadow/*` | Allow receiving messages on shadow topics |
+
+**Principle of Least Privilege:**
+- Restrict to only necessary topics
+- Don't use wildcard `*` unless required
+- Separate policies for read vs. write operations
+
+---
+
+### 5. Security Checklist
+
+| Item | Status | Details |
+|------|--------|---------|
+| **Certificate** | ✓ | X.509 issued by AWS, activated |
+| **Private Key** | ✓ | Stored securely on device (NVOCMP flash) |
+| **Root CA** | ✓ | Downloaded from AWS Trust Services |
+| **Thing Created** | ✓ | Device representation in IoT console |
+| **Policy Attached** | ✓ | Least-privilege permissions applied |
+| **Certificate Attached to Thing** | ✓ | Certificate linked to Thing |
+| **Endpoint Noted** | ✓ | Device data endpoint copied |
+| **TLS 1.2+** | ✓ | mbedTLS enforces TLS 1.2 minimum |
+| **Mutual TLS** | ✓ | Client cert presented, server cert verified |
+
+---
+
+## Compilation & Deployment
+
+### Building the AWS Plugin
+
+```bash
+# Build dependencies (root directory)
+make build-all-ticlang
+
+# Build example project (if available)
+make example EXAMPLE=projects/LP_EM_CC35X1/aws-iot-telemetry TOOLCHAIN=ticlang
+```
+
+### Loading Certificates onto Device
+
+Certificates must be provisioned into the CC3551's non-volatile memory (NVOCMP):
+
+1. **During First Boot:**
+   - Device runs provisioning mode (BLE + Wi-Fi)
+   - Receives certificate, key, and thing name over secure channel
+   - Stores in NVOCMP
+
+2. **Via JTAG/Debug Probe:**
+   - Flash pre-provisioned firmware with certs embedded
+   - Use Code Composer Studio debugger
+
+3. **Via AWS IoT Fleet Provisioning (Future):**
+   - Device obtains temporary credentials
+   - Registers itself with AWS
+   - Receives permanent certificate
+
+---
+
+## Testing the Connection
+
+### Option 1: AWS IoT Console Test Client (Easiest)
+
+**No prerequisites — everything in the AWS Console:**
+
+1. Go to [AWS IoT Console](https://console.aws.amazon.com/iot/home)
+2. Left sidebar → **Test** (under Manage)
+3. **Subscribe to topics:**
+   - In the **Subscribe to a topic** field, enter: `AwsTI/DevMac_AABBCCDDEEFF/telemetry`
+   - Click **Subscribe**
+   - Incoming telemetry will appear in real-time
+
+4. **View Device Shadow:**
+   - Go to **Manage** → **Things** → **DevMac_AABBCCDDEEFF** → **Shadow**
+   - View current state, or edit desired state to control LEDs
+
+5. **Publish to shadow:**
+   - In the Test client, **Publish to a topic:** `$aws/things/DevMac_AABBCCDDEEFF/shadow/update`
+   - Payload:
+     ```json
+     {"state":{"desired":{"green_led":"on","blue_led":"off","red_led":"off"}}}
+     ```
+   - Click **Publish**
+
+**Advantages:**
+- No external tools needed
+- Real-time message viewing
+- No certificate file management
+- Visual shadow editor
+
+---
+
+### Option 2: AWS CLI (Command Line)
+
+**Prerequisites:**
+- AWS CLI installed and configured
+
+**Test Device Shadow Control:**
+```bash
+# Update shadow desired state (turn green LED on)
+aws iot-data update-thing-shadow \
+  --thing-name DevMac_AABBCCDDEEFF \
+  --payload '{"state":{"desired":{"green_led":"on","blue_led":"off","red_led":"off"}}}' \
+  shadow.json
+
+# View shadow state
+aws iot-data get-thing-shadow \
+  --thing-name DevMac_AABBCCDDEEFF \
+  shadow.json
+
+cat shadow.json
+```
+
+**Advantages:**
+- No certificate files needed
+- Uses AWS credentials from `~/.aws/config`
+- Scriptable and automatable
+- Shadow-specific operations (not general MQTT)
+
+---
+
+### Option 3: Mosquitto CLI (Linux/macOS)
+
+**Prerequisites:**
+- `mosquitto_pub` installed (`apt-get install mosquitto-clients`)
+- Device certificates downloaded locally
+- Device must support mTLS connection (for testing from external machine)
+
+**Test Telemetry Publishing:**
+```bash
+# Subscribe to telemetry topic (in one terminal)
+mosquitto_sub \
+  --cert certificate.pem \
+  --key private.key \
+  --cafile AmazonRootCA1.pem \
+  -h abcd1234.iot.us-east-1.amazonaws.com \
+  -p 8883 \
+  -t 'AwsTI/DevMac_AABBCCDDEEFF/telemetry'
+
+# In another terminal, publish a test message
+mosquitto_pub \
+  --cert certificate.pem \
+  --key private.key \
+  --cafile AmazonRootCA1.pem \
+  -h abcd1234.iot.us-east-1.amazonaws.com \
+  -p 8883 \
+  -t 'AwsTI/DevMac_AABBCCDDEEFF/telemetry' \
+  -m '{"device_id":"DevMac_AABBCCDDEEFF","timestamp_s":1234567890,"temperature_c":"25.5","axis_X":"-120","axis_Y":"45","axis_Z":"980","battery_mv":3700,"sleep_pct":40,"uptime_s":3600,"rssi_dbm":-65,"app_version":"1.0.0"}'
+```
+
+**Advantages:**
+- Full MQTT protocol support
+- Direct broker connection
+- Low-level control
+
+---
+
+### Recommended Testing Flow
+
+1. **Quick shadow control** → Use AWS Console Test or AWS CLI
+2. **Monitor telemetry** → Use AWS Console Test (subscribe to `AwsTI/DevMac_*/telemetry`)
+3. **Advanced MQTT testing** → Use mosquitto_pub/mosquitto_sub
+
+---
+
+## AWS IoT Console Features
+
+### 1. Monitor Device Activity
+
+**Test (left sidebar):**
+- Click on a topic to subscribe and monitor messages in real-time
+- See telemetry, shadow updates, and errors
+
+### 2. Device Shadow Management
+
+**Manage → Things → {thingName} → Shadow:**
+- View current shadow state
+- Edit desired state (to control device)
+- See reported state from device
+
+### 3. Message Routing & Analytics
+
+**Manage → Message Routing → Rules:**
+- Create rules to forward messages to S3, DynamoDB, Lambda, etc.
+- Example: Store telemetry in DynamoDB for analytics
+
+### 4. Fleet Provisioning
+
+**Onboard → Provision template:**
+- Enable bulk device provisioning without pre-loading certificates
+- Devices register themselves with AWS
 
 ---
 
 ## Troubleshooting
 
-### Submodule Issues
-
-```bash
-# Empty directories in resources/
-git submodule init && git submodule update
-
-# Submodule on wrong commit (+ prefix in git submodule status)
-cd resources/third-party/<submodule-name>
-git checkout <commit-hash>  # From expected commit in 'git submodule status'
-```
-
-### Build Errors
-
-**`SYSCONFIG_TOOL not found`**
-→ Update path in `imports.mak`, find with: `which sysconfig_cli.sh` (Linux/macOS)
-
-**`TICLANG_ARMCOMPILER not defined`**
-→ Set path in `imports.mak` to your TI ARM Clang installation
-
-**`CMAKE not found`**
-→ Install CMake and add to PATH, or set absolute path in `imports.mak`
-
-**`undefined reference to mbedtls_*`**
-→ Rebuild mbedTLS: `make clean-mbedtls && make build-mbedtls-ticlang`
-
-**`error: use of undeclared identifier`**
-→ Clean and rebuild: `make clean && make`
-
-### Import Errors in CCS
-
-**"Project import failed"**
-→ Build SDK dependencies first: `make build-all-ticlang`
-
-**"Cannot find syscfg files"**
-→ Generated during first build. Build via command line first, then reimport.
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| **Connection refused (port 8883)** | No internet, firewall blocking | Check Wi-Fi, verify endpoint domain |
+| **Certificate error (0x7280)** | Invalid cert or mTLS handshake failed | Verify cert is activated, check root CA |
+| **Authentication failed** | Policy too restrictive or cert not attached | Verify policy and certificate attachment |
+| **MQTT timeout** | Network delay or firewall blocking port 8883 | Use `mosquitto_pub` to test connectivity |
+| **Device doesn't receive shadow updates** | Not subscribed to delta topic | Call `AwsIotLed_Subscribe()` |
 
 ---
 
-## Additional Resources
+## Next Steps
 
-**Documentation:**
-- [CC35xx Technical Reference Manual](https://www.ti.com/lit/pdf/swru615)
-- [SimpleLink CC35xx SDK User Guide](https://dev.ti.com/tirex/explore/node?node=A__AHCNcbE0w4VCQN4yz4hFnw__com.ti.SIMPLELINK_CC13XX_CC26XX_SDK__BSEc4rl__LATEST)
-- [FreeRTOS Documentation](https://www.freertos.org/Documentation/RTOS_book.html)
-
-**Support:**
-- [TI E2E Forums](https://e2e.ti.com/) - Community support
-- [GitHub Issues](https://github.com/TexasInstruments/simplelink_wi-fi_demos/issues) - Bug reports and feature requests
-
-**Training:**
-- [SimpleLink Academy](https://dev.ti.com/tirex/explore/node?node=A__ABCX8XTjVxZ66BjJjGYucg__com.ti.SIMPLELINK_ACADEMY_CC13XX_CC26XX__AfkT0TQ__LATEST) - Interactive tutorials
-- [TI Training Portal](https://training.ti.com/) - Video courses
+1. **Set up AWS IoT Core** following the steps in Section 2
+2. **Provision device certificate** onto CC3551
+3. **Compile and flash** the AWS example code
+4. **Monitor telemetry** in AWS IoT Console Test tab
+5. **Control LED** via Device Shadow updates
 
 ---
 
-## License
+## References
 
-- Example code: BSD-3-Clause
-- SimpleLink SDK: See `resources/simplelink-wifi-sdk/LICENSE`
-- Azure IoT components: MIT License
-- FreeRTOS: MIT License
-- mbedTLS: Apache 2.0
-
-See individual component directories for full license texts.
+- [AWS IoT Core Documentation](https://docs.aws.amazon.com/iot-core/)
+- [Device Shadow Service](https://docs.aws.amazon.com/iot/latest/developerguide/device-shadow-service.html)
+- [coreMQTT Documentation](https://github.com/FreeRTOS/coreMQTT)
+- [mbedTLS Documentation](https://mbed-tls.readthedocs.io/)
+- [CC3551 Technical Reference Manual](https://www.ti.com/lit/pdf/swru615)
 
 ---
 
-## Version History
-
-**v1.0.0** (2025-03-13)
-- Initial release
-- Azure IoT MQTT example for LP-EM-CC35X1 (CC3500/CC3501/CC3550/CC3551)
-- Support for TI Clang and GCC toolchains
-- FreeRTOS + mbedTLS with PSA Crypto hardware acceleration
-
----
-
-**Questions?** Open an issue on [GitHub](https://github.com/TexasInstruments/simplelink_wi-fi_demos/issues) or visit [TI E2E Forums](https://e2e.ti.com/).
+**Document Version:** 1.0  
+**Last Updated:** May 2026

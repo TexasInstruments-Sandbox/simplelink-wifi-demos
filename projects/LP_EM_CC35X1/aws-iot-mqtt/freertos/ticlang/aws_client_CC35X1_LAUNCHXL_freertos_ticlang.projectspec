@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectSpec>
+    <applicability>
+        <when>
+            <context
+                deviceFamily="ARM"
+                deviceId="Cortex M.CC35X1"
+            />
+        </when>
+    </applicability>
+
+    <project
+        title="AWS IOT Client"
+        name="aws_iot_project_LP_EM_CC35X1_freertos_ticlang_10_10_00_18_projectspec"
+        configurations="Debug"
+        toolChain="TICLANG"
+        connection="TIXDS110_Connection.xml"
+        device="Cortex M.CC35X1E"
+        ignoreDefaultDeviceSettings="true"
+        ignoreDefaultCCSSettings="false"
+        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig:1.26.1"
+        compilerBuildOptions="
+            -Ofast
+            -DCC35XX
+            -DRAM_CONTAINER
+            -DSNTP_SUPPORT
+            -DNVOCMP_POSIX_MUTEX
+			-DMBEDTLS_CONFIG_FILE=&apos;&quot;config-hsm.h&quot;&apos;
+			-DMBEDTLS_PSA_CRYPTO_CONFIG_FILE=&apos;&quot;config-psa-crypto-hsm.h&quot;&apos;
+            -I${SIMPLELINK_SDK}/source
+            -I${SIMPLELINK_SDK}/kernel/freertos
+            -I${SIMPLELINK_SDK}/source/ti/posix/ticlang
+            -I${SIMPLELINK_SDK}/source/third_party/freertos/include
+            -I${SIMPLELINK_SDK}/source/third_party/freertos/portable/GCC/ARM_CM33_NTZ/non_secure
+            -I${SIMPLELINK_SDK}/source/ti/net/ble_interface/inc_adapt
+            -I${SIMPLELINK_SDK}/source/ti/net/ble_interface/inc_common
+            -I${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_platform/cc35xx/inc_common
+            -I${SIMPLELINK_SDK}/source/ti/net/wifi_stack/inc_common
+            -I${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/inc_common
+            -I${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/inc_adapt
+            -I${SIMPLELINK_SDK}/tools/TI_Containers
+            -I${SIMPLELINK_SDK}/source/third_party/lwip/lwip-stack/src/include
+            -I${SIMPLELINK_SDK}/source/third_party/lwip/ti_config/lwip-port/osi/include
+            -I${SIMPLELINK_SDK}/source/third_party/lwip/lwip-contrib
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/ti_config/nimble-port/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/ti_config/nimble-port/porting/npl/osi/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/nimble/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/nimble/host/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/nimble/host/services/gap/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/nimble/host/services/gatt/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/nimble/host/services/dis/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/nimble/host/util/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/nimble/transport/include
+            -I${SIMPLELINK_SDK}/source/third_party/nimble/nimble-src/porting/nimble/include
+            -I${SIMPLELINK_SDK}/source/third_party/mbedTLS
+            -I${SIMPLELINK_SDK}/source/third_party/mbedTLS/include
+			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/tests/include
+            -I${SIMPLELINK_SDK}/source/third_party/mbedTLS/ti/configs
+            -I${SIMPLELINK_SDK}/source/third_party/mbedTLS/ti/port
+			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/include/psa
+			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/configs
+			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/include/mbedtls
+			-I${SIMPLELINK_SDK}/source/third_party/mbedTLS/library
+            -I${TI_MODIFIED_HEADERS}
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/common/inc
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport
+			-I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging
+			-I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws
+            -I${COREMQTT}/source/include
+			-I${COREJSON}/source/include
+            -I${COREMQTT}/source/interface
+			-I${BACKOFFALGORITHM}/source/include
+            -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs
+            -I../../configs
+            -I${PROJECT_ROOT}/adaptation
+            -I${PROJECT_ROOT}/configs
+            -I${PROJECT_ROOT}/connection
+            -I${PROJECT_ROOT}/logging
+            -I${PROJECT_ROOT}/utilities
+            -I${PROJECT_ROOT}
+            -gdwarf-3
+            -mcpu=cortex-m33
+            -mfloat-abi=hard
+            -mfpu=fpv5-sp-d16
+            -Wall
+        "
+        linkerBuildOptions="
+            -L${SIMPLELINK_SDK}/source
+            -Wl,-l${SIMPLELINK_SDK}/source/third_party/lwip/lib/ticlang/lwip.a
+            -Wl,-l${SIMPLELINK_SDK}/source/third_party/hostap/lib/ticlang/hostap.a
+            -Wl,-l${SIMPLELINK_SDK}/source/third_party/nimble/lib/ticlang/nimble.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/net/wifi_stack/lib/ticlang/wifi_stack.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/net/ble_interface/lib/ticlang/ble_interface.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/lib/ticlang/wifi_host_driver.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_platform/cc35xx/lib/ticlang/wifi_platform_cc35xx.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/utils/FWU/lib/ticlang/FWU.a
+            -Wl,--reread_libs
+            -L${PROJECT_BUILD_DIR}/syscfg
+            -lti_utils_build_linker.cmd.genlibs
+            -Wl,--rom_model
+            -Wl,--warn_sections
+            -L${CG_TOOL_ROOT}/lib
+            -llibc.a
+        "
+        sysConfigBuildOptions="
+            --product ${SIMPLELINK_SDK}/.metadata/product.json
+            --product ${COM_TI_SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR}/.metadata/product.json
+            --compiler ticlang
+        "
+        description="connect to AWS IoT MQTT broker">
+
+        <!-- ===== PATH VARIABLES ===== -->
+        <pathVariable name="SIMPLELINK_SDK_DEMO_ROOT" path="../../../../.." scope="project"/>
+        <pathVariable name="SIMPLELINK_SDK" path="../../../../../resources/simplelink-wifi-sdk" scope="project"/>
+        <pathVariable name="TI_MODIFIED_HEADERS" path="../../ti_modified_headers" scope="project"/>
+        <pathVariable name="COREMQTT" path="../../../../../resources/third-party/coreMQTT" scope="project"/>
+		<pathVariable name="COREJSON" path="../../../../../resources/third-party/coreJSON" scope="project"/>
+		<pathVariable name="BACKOFFALGORITHM" path="../../../../../resources/third-party/backoffAlgorithm" scope="project"/>
+
+        <!-- ===== PROJECT PROPERTIES ===== -->
+		<property name="launch.loadSymbolsOnly" value="true"/>
+        <property name="buildProfile" value="release"/>
+        <property name="isHybrid" value="true"/>
+
+        <!-- ============================================================================ -->
+        <!-- APPLICATION SOURCE FILES (Project Root)                                      -->
+        <!-- ============================================================================ -->
+        <file path="../../aws_iot_client_app.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../aws_iot_client_app.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../freertos/main_freertos.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../freertos/aws_iot_client_app.syscfg" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../wifi_settings.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../syscalls_stubs.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/README.md" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- HARDWARE/PLATFORM SPECIFIC (Project Root - from src/freertos/platform)      -->
+        <!-- ============================================================================ -->
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/nvocmp_cc35xx.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/nvocmp.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/nvintf.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/crc.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/crc.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/common/inc/default_netif.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/uart_term.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- ADAPTATION LAYER (adaptation/ directory)                                    -->
+        <!-- ============================================================================ -->
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/osi_dpl.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/osi_filesystem.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/uart_term.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+		</file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/date_time_service.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+		</file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/date_time_service.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+		</file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/common/sntp_task.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+		</file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/common/inc/sntp_task.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+		</file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/sntp_wrapper.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+		</file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/sntp_wrapper.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+		</file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/syslog.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="adaptation">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- CONFIGURATION FILES (configs/ directory)                                    -->
+        <!-- ============================================================================ -->
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs/core_mqtt_config.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="configs">
+        </file>
+		<file path="../../configs/demo_config.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="configs">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs/mbedtls_config.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="configs">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- TRANSPORT LAYER (transport/ directory)                                      -->
+        <!-- ============================================================================ -->
+		<!-- Source Files -->
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/transport_tls_socket_using_mbedtls.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="transport">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/sockets_wrapper_lwip.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="transport">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/mbedtls_freertos_port.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="transport">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws_iot_core_mqtt.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="transport">
+        </file>
+        <file path="${SIMPLELINK_SDK}/source/third_party/mbedTLS/ti/port/threading_alt.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport">
+        </file>
+		<!-- Include Files -->
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws/aws_iot_mqtt.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws/aws_iot_transport_interface.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws/sockets_wrapper.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws/transport_abstraction.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws/transport_tls_socket.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport/aws">
+        </file>
+		
+		<!-- ============================================================================ -->
+        <!-- AWS cloud adaptation (cloud/aws/ directory)	                              -->
+        <!-- ============================================================================ -->
+        <!-- Source Files -->
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_telemetry.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_led.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
+		
+        <!-- Include Files -->
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_telemetry.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_led.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
+		
+        <!-- ============================================================================ -->
+        <!-- CONNECTION LAYER (connection/ directory)                                    -->
+        <!-- ============================================================================ -->
+
+        <!-- ============================================================================ -->
+        <!-- LOGGING (logging/ directory)                                                -->
+        <!-- ============================================================================ -->
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging_levels.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging/logging_stack.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="logging">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- UTILITIES (utilities/ directory)                                            -->
+        <!-- Network stack and platform interfaces                                       -->
+        <!-- ============================================================================ -->
+        <!-- Network Stack Interfaces -->
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc/dns_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/dns_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc/tcpip_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/tcpip_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/inc/wifi_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/ns/lwip/wifi_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <!-- Platform Interfaces (button, LED) -->
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/button_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/button_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/inc/led_if.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+        <file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/platform/LP_EM_CC35X1/led_if.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="utilities">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- COREMQTT (components/coreMQTT/)                                             -->
+        <!-- Linked from resources/third-party/coreMQTT                                  -->
+        <!-- ============================================================================ -->
+        <!-- Source Files -->
+		<file path="${COREMQTT}/source/core_mqtt.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source">
+        </file>
+		<file path="${COREMQTT}/source/core_mqtt_serializer.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source">
+        </file>
+		<file path="${COREMQTT}/source/core_mqtt_state.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source">
+        </file>
+        <!-- Include Files -->
+		<file path="${COREMQTT}/source/include/core_mqtt_config_defaults.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/include">
+        </file>
+		<file path="${COREMQTT}/source/include/core_mqtt_serializer.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/include">
+        </file>
+		<file path="${COREMQTT}/source/include/core_mqtt_state.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/include">
+        </file>
+		<file path="${COREMQTT}/source/include/core_mqtt.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/include">
+        </file>
+        <!-- Interface Files -->
+		<file path="${COREMQTT}/source/interface/transport_interface.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/interface">
+        </file>
+		
+		<!-- ============================================================================ -->
+        <!-- COREJSON (components/coreJson/)                                             -->
+        <!-- Linked from resources/third-party/coreJSON                                  -->
+        <!-- ============================================================================ -->
+        <!-- Source Files -->
+		<file path="${COREJSON}/source/core_json.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreJSON/source">
+        </file>
+        <!-- Include Files -->
+		<file path="${COREJSON}/source/include/core_mqtt_config_defaults.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreJSON/source/include">
+        </file>
+		
+		<!-- ============================================================================ -->
+        <!-- BACKOFFALGORITHM (components/BackoffAlgorithm/)                              -->
+        <!-- Linked from resources/third-party/backoffAlgorithm                           -->
+        <!-- ============================================================================ -->
+        <!-- Source Files -->
+		<file path="${BACKOFFALGORITHM}/source/backoff_algorithm.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/BackoffAlgorithm/source">
+        </file>
+        <!-- Include Files -->
+		<file path="${BACKOFFALGORITHM}/source/include/backoff_algorithm.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/BackoffAlgorithm/source/include">
+        </file>
+
+        <!-- ============================================================================ -->
+        <!-- LINKER SCRIPT                                                               -->
+        <!-- ============================================================================ -->
+        <file path="../../freertos/ticlang/linker.cmd" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+    </project>
+</projectSpec>
