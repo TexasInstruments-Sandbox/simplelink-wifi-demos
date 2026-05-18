@@ -27,6 +27,7 @@
             -DNVOCMP_POSIX_MUTEX
 			-DMBEDTLS_CONFIG_FILE=&apos;&quot;config-hsm.h&quot;&apos;
 			-DMBEDTLS_PSA_CRYPTO_CONFIG_FILE=&apos;&quot;config-psa-crypto-hsm.h&quot;&apos;
+			-DHTTP_DO_NOT_USE_CUSTOM_CONFIG
             -I${SIMPLELINK_SDK}/source
             -I${SIMPLELINK_SDK}/kernel/freertos
             -I${SIMPLELINK_SDK}/source/ti/posix/ticlang
@@ -38,6 +39,9 @@
             -I${SIMPLELINK_SDK}/source/ti/net/wifi_stack/inc_common
             -I${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/inc_common
             -I${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/inc_adapt
+			-I${SIMPLELINK_SDK}/source/ti/utils/FWU
+			-I${SIMPLELINK_SDK}/source/ti/utils/FWU/headers
+			-I${SIMPLELINK_SDK}/source/ti/utils/FWU/headers/fwu/1.0/psa
             -I${SIMPLELINK_SDK}/tools/TI_Containers
             -I${SIMPLELINK_SDK}/source/third_party/lwip/lwip-stack/src/include
             -I${SIMPLELINK_SDK}/source/third_party/lwip/ti_config/lwip-port/osi/include
@@ -71,8 +75,10 @@
             -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/logging
 			-I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws
             -I${COREMQTT}/source/include
+			-I${COREMQTT}/source/interface
+			-I${COREHTTP}/source/include
+			-I${COREHTTP}/source/dependency/3rdparty/llhttp/include
 			-I${COREJSON}/source/include
-            -I${COREMQTT}/source/interface
 			-I${BACKOFFALGORITHM}/source/include
             -I${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/configs
             -I../../configs
@@ -118,6 +124,7 @@
         <pathVariable name="SIMPLELINK_SDK" path="../../../../../resources/simplelink-wifi-sdk" scope="project"/>
         <pathVariable name="TI_MODIFIED_HEADERS" path="../../ti_modified_headers" scope="project"/>
         <pathVariable name="COREMQTT" path="../../../../../resources/third-party/coreMQTT" scope="project"/>
+		<pathVariable name="COREHTTP" path="../../../../../resources/third-party/coreHTTP" scope="project"/>
 		<pathVariable name="COREJSON" path="../../../../../resources/third-party/coreJSON" scope="project"/>
 		<pathVariable name="BACKOFFALGORITHM" path="../../../../../resources/third-party/backoffAlgorithm" scope="project"/>
 
@@ -230,11 +237,19 @@
         </file>
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_led.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
         </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_ota.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_ota_https.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
 		
         <!-- Include Files -->
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_telemetry.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
         </file>
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_led.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_ota.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
+        </file>
+		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_ota_https.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
         </file>
 		
         <!-- ============================================================================ -->
@@ -300,6 +315,33 @@
         </file>
         <!-- Interface Files -->
 		<file path="${COREMQTT}/source/interface/transport_interface.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/interface">
+        </file>
+		
+		<!-- ============================================================================ -->
+        <!-- COREHTTP (components/coreHTTP/)                                             -->
+        <!-- Linked from resources/third-party/coreHTTP                                  -->
+        <!-- ============================================================================ -->
+        <!-- Source Files -->
+		<file path="${COREHTTP}/source/core_http_client.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source">
+        </file>
+        <!-- Include Files -->
+		<file path="${COREHTTP}/source/include/core_http_client.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/include">
+        </file>
+		<file path="${COREHTTP}/source/include/core_http_client_private.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/include">
+        </file>
+		<file path="${COREHTTP}/source/include/core_http_config_defaults.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/include">
+        </file>
+        <!-- Interface Files -->
+		<file path="${COREHTTP}/source/interface/transport_interface.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/interface">
+        </file>
+		<!-- Dependency Files -->
+		<file path="${COREHTTP}/source/dependency/3rdparty/llhttp/src/api.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/dependency">
+        </file>
+		<file path="${COREHTTP}/source/dependency/3rdparty/llhttp/src/http.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/dependency">
+        </file>
+		<file path="${COREHTTP}/source/dependency/3rdparty/llhttp/src/llhttp.c" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/dependency">
+        </file>
+		<file path="${COREHTTP}/source/dependency/3rdparty/llhttp/include/llhttp.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/dependency">
         </file>
 		
 		<!-- ============================================================================ -->

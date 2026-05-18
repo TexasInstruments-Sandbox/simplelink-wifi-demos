@@ -58,6 +58,8 @@
 /* AWS IoT Hub */
 #include "aws_iot_mqtt.h"
 #include "aws_iot_telemetry.h"
+#include "aws_iot_ota.h"
+#include "aws_iot_led.h"
 
 //ERRORS
 #include "errors.h"
@@ -98,7 +100,7 @@ static StaticEventGroup_t  s_egBuf;
  * @brief Time in ticks to wait between each cycle of the demo implemented
  * by prvMQTTDemoTask().
  */
-#define sampleawsiotDELAY_BETWEEN_DEMO_ITERATIONS_TICKS     ( pdMS_TO_TICKS( 60000U ) )
+#define sampleawsiotDELAY_BETWEEN_DEMO_ITERATIONS_TICKS     ( pdMS_TO_TICKS( 10000U ) )
 
 
 /**
@@ -230,7 +232,7 @@ int32_t DisplayAppBanner(char* appName, char* appVersion)
  */
 static void s_mqtt_dispatch(MQTTPublishInfo_t *pPublish)
 {
-    //AwsIotOta_OnMqttPublish(pPublish);
+    AwsIotOta_OnMqttPublish(pPublish);
     AwsIotLed_OnMqttPublish(pPublish);
 }
 
@@ -320,6 +322,14 @@ void prvAwsDemoTask( void * pvParameters )
                 UART_PRINT("[Main] Connected. Publishing every %u ms.\r\n",
                         (unsigned)AWS_IOT_TELEMETRY_PERIOD_MS);
 
+		  /* OTA initialisation — shares the telemetry MQTT connection */
+                if (AwsIotOta_Init(AwsIotTelemetry_GetMqttCtx()) == 0)
+	         {
+	             AwsIotOta_HandleTrialState();   /* accept/reject TRIAL firmware */
+	             AwsIotOta_Subscribe();          /* subscribe to Jobs notification topics */
+	             AwsIotOta_CheckForUpdate();     /* poll for any job pending before boot */
+	         }
+
                 /* LED shadow control â€” shares the telemetry MQTT connection */
                 if (AwsIotLed_Init(AwsIotTelemetry_GetMqttCtx()) == 0)
                 {
@@ -347,14 +357,14 @@ void prvAwsDemoTask( void * pvParameters )
 	                {
 	                    break;
 	                }
-#if 0
+
 	                UART_PRINT("[Main] Executing firmware update...\r\n");
 	                if (AwsIotOta_ExecuteUpdate() != 0)
 	                {
 	                    UART_PRINT("[Main] Update failed — reconnecting\r\n");
 	                    break;
 	                }
-#endif					
+					
 	                /* ExecuteUpdate returned 0 without rebooting (target version
 	                 * already installed) — loop back to resume telemetry. */
 	            }				
@@ -411,6 +421,11 @@ void *main_entry(void *args)
      *       To control the leds from the APP only - uncomment WIFI_LED_HANDLE (in wifi_settings.h)
      */
     LED_IF_init();
+
+    /* initializes the event group */
+    s_btnEvents = xEventGroupCreateStatic(&s_egBuf);
+    /* clear all requests on switches */
+    ButtonHandler_ClearEvents(BTN_EVT_SW1 | BTN_EVT_SW2);
 
     /* Output device information to the UART terminal */
     RetVal = DisplayAppBanner(APPLICATION_NAME, APPLICATION_VERSION);

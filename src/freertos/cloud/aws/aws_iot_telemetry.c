@@ -187,23 +187,6 @@ static MQTTContext_t mqttContext = { 0 };
  */
 static uint32_t ulGlobalEntryTimeMs;
 
-/**
- * @brief Array to track the outgoing publish records for outgoing publishes
- * with QoS > 0.
- *
- * This is passed into #MQTT_InitStatefulQoS to allow for QoS > 0.
- *
- */
-static MQTTPubAckInfo_t pOutgoingPublishRecords[ mqttexampleOUTGOING_PUBLISH_RECORD_LEN ];
-
-/**
- * @brief Array to track the incoming publish records for incoming publishes
- * with QoS > 0.
- *
- * This is passed into #MQTT_InitStatefulQoS to allow for QoS > 0.
- *
- */
-static MQTTPubAckInfo_t pIncomingPublishRecords[ mqttexampleINCOMING_PUBLISH_RECORD_LEN ];
 
 /*
  * @brief Static buffer used to hold MQTT messages being sent and received.
@@ -214,21 +197,6 @@ static uint8_t ucMQTTMessageBuffer[ democonfigNETWORK_BUFFER_SIZE ];
 static char pTopic[128];
 
 static char pThingName[AWS_IOT_MAX_THING_NAME];
-
-#if 0
-static NetworkContext_t  s_netCtx;
-static MQTTContext_t     s_mqttCtx;
-static MQTTFixedBuffer_t s_mqttBuf;
-
-/* Smaller MQTT buffer than provisioning: telemetry only exchanges tiny packets
- * (CONNECT/CONNACK, PUBLISH ~200 B payload, PUBACK, PINGREQ/PINGRESP). */
-static uint8_t           s_mqttNetBuf[AWS_IOT_TELEMETRY_MQTT_BUFFER_SIZE];
-
-/* QoS 1 publish-record arrays */
-static MQTTPubAckInfo_t  s_outgoingPubRecords[2];
-static MQTTPubAckInfo_t  s_incomingPubRecords[4];
-
-#endif
 
 /* Monotonically incrementing MQTT packet identifier */
 static uint16_t s_packetId = 1U;
@@ -443,6 +411,7 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Init(void)
     I2C_Params i2cParams;
     I2C_Transaction i2cTransaction;
     uint8_t txBuffer[2];
+    uint8_t rxBuffer[2];
     uint16_t sensorIdx;
 
     /* opens I2C interface for sensor readings which is uploaded to AWS as telemetry data */
@@ -461,6 +430,12 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Init(void)
     {
         UART_PRINT("[Telemetry] I2C Initialized!\n\r");
     }
+
+    /* Common I2C transaction setup */
+    i2cTransaction.writeBuf   = txBuffer;
+    i2cTransaction.writeCount = 1;
+    i2cTransaction.readBuf    = rxBuffer;
+    i2cTransaction.readCount  = 0;
 
     /*
      * Determine if I2C sensor is present by querying known I2C
@@ -615,6 +590,9 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
     char accZStr[16];
     int16_t temperature;
     uint8_t accXYZ;
+    WlanBeaconRssi_t beaconRssi = {0};
+    char rssiStr[16];
+    int16_t retCode = 0;
 
     for (;;)
     {
@@ -635,6 +613,12 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
 	    /* thing name and topic were built during AWS connect - no change during a session. */
         /* reading sensors and fill onto the outgoing message */
         tempStr[0]='\0';
+
+         /* Common I2C transaction setup */
+        i2cTransaction.writeBuf   = txBuffer;
+        i2cTransaction.writeCount = 1;
+        i2cTransaction.readBuf    = rxBuffer;
+
         /*
         * read temperature sensor
         */
@@ -653,7 +637,7 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 temperature = (rxBuffer[0]);
 
                 sprintf(tempStr, "%d", temperature);
-                UART_PRINT("[Telemetry] temperature is %d degC\n\r", tempStr);
+                UART_PRINT("[Telemetry] temperature is %s degC\n\r", tempStr);
             }
             else
             {
@@ -672,7 +656,7 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 accXYZ = (rxBuffer[0]);
 
                 sprintf(accXStr, "%d", accXYZ);
-                UART_PRINT("[Telemetry] accelerometer X axis is %d\n\r", accXStr);
+                UART_PRINT("[Telemetry] accelerometer X axis is %s\n\r", accXStr);
             }
             else
             {
@@ -685,7 +669,7 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 accXYZ = (rxBuffer[0]);
 
                 sprintf(accYStr, "%d", accXYZ);
-                UART_PRINT("[Telemetry] accelerometer Y axis is %d\n\r", accXStr);
+                UART_PRINT("[Telemetry] accelerometer Y axis is %s\n\r", accYStr);
             }
             else
             {
@@ -698,12 +682,23 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 accXYZ = (rxBuffer[0]);
 
                 sprintf(accZStr, "%d", accXYZ);
-                UART_PRINT("[Telemetry] accelerometer Z axis is %d\n\r", accXStr);
+                UART_PRINT("[Telemetry] accelerometer Z axis is %s\n\r", accZStr);
             }
             else
             {
                  UART_PRINT("[Telemetry] failed to read accelerometer sensor\n\r");
             }
+        }
+
+        /* fetch connection RSSI. on failure, publish N/A */
+        retCode = Wlan_Get(WLAN_GET_RSSI,(void *)&beaconRssi);
+        if (retCode == 0)
+        {
+            sprintf(rssiStr, "%d", beaconRssi.rssi_beacon);
+        }
+        else
+        {
+            strcpy(rssiStr, "N/A");
         }
 		
         snprintf(jsonBuf, sizeof(jsonBuf),
@@ -714,10 +709,8 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                  "\"axis_X\":%s,"
                  "\"axis_Y\":%s,"
                  "\"axis_Z\":%s,"
-                 "\"battery_mv\":3700,"
-                 "\"sleep_pct\":40,"
                  "\"uptime_s\":%lu,"
-                 "\"rssi_dbm\":-65,"
+                 "\"rssi_dbm\":%s,"
                  "\"app_version\":\"%s\""
                  "}",
                  pThingName,
@@ -727,6 +720,7 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                  accYStr,
                  accZStr,
                  (unsigned long)uptime_s,
+                 rssiStr,
                  APPLICATION_VERSION);
 
         /* ---- Publish at QoS 1 ---- */
@@ -773,14 +767,13 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 UART_PRINT("[Telemetry] MQTT_ProcessLoop error: %d\r\n", (int)loopRet);
                 return AWS_IOT_TELEMETRY_ERROR_PUBLISH;
             }
-#if 0
+
             /* Check if the publish callback (OTA handler) signalled a pending job */
             if (AwsIotOta_IsUpdatePending())
             {
                 UART_PRINT("[Telemetry] OTA job pending — pausing telemetry\r\n");
                 return AWS_IOT_TELEMETRY_OTA_PENDING;
-            }
-#endif			
+            }	
         }
     }
 }

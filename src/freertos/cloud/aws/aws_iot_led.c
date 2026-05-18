@@ -62,6 +62,8 @@ static char s_topicGetAccepted[144];  /**< shadow/get/accepted    */
 static char s_topicUpdate[128];       /**< shadow/update          */
 static char s_topicGet[128];          /**< shadow/get             */
 
+char         ledStates[CONFIG_TI_DRIVERS_LED_COUNT][4];  /* 3 LEDs, max 4 chars ("off" + null terminator) */
+
 /* --------------------------------------------------------------------------
  * Internal helpers
  * --------------------------------------------------------------------------*/
@@ -86,28 +88,24 @@ static uint16_t next_packet_id(void)
  */
 static char * s_apply_led_command(const char *pVal, size_t valLen, uint8_t ledIdx)
 {
-    const char *stateStr;
-
     if (valLen == 2u && strncmp(pVal, "on", 2) == 0)
     {
-        LED_IF_set(CONFIG_LED_RED, 100);
-        stateStr = "on";
+        LED_IF_set(ledIdx, 100);
         UART_PRINT("[LED] LED turned ON\r\n");
+        return "on";
     }
     else if (valLen == 3u && strncmp(pVal, "off", 3) == 0)
     {
-        LED_IF_set(CONFIG_LED_RED, 0);
-        stateStr = "off";
+        LED_IF_set(ledIdx, 0);
         UART_PRINT("[LED] LED turned OFF\r\n");
+        return "off";
     }
     else
     {
         UART_PRINT("[LED] Unknown LED command value (len=%u)\r\n",
                    (unsigned)valLen);
-        return NULL;
+        return "N/A";
     }
-
-    return stateStr;
 }
 
 /* --------------------------------------------------------------------------
@@ -216,8 +214,7 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
     const char  *pVal   = NULL;
     size_t       valLen = 0;
     JSONStatus_t jret;
-    char         ledStates[CONFIG_TI_DRIVERS_LED_COUNT][4];  // 3 LEDs, max 4 chars ("off" + null terminator)
-    char         reportedPayload[64];
+    char         reportedPayload[128];
 
     if (pPublish == NULL || pPublish->pTopicName == NULL)
     {
@@ -244,6 +241,7 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
 
     if (isDelta)
     {
+        UART_PRINT("[LED] is_delta payload %s, payload_len %d\n\r", pPublish->pPayload, pPublish->payloadLength);
         /* Delta payload: {"version":N,"state":{"green_led":"on/off","blue_led":"on/off","red_led":"on/off"},...}
          * Key path within the JSON document: e.g. "state.green_led" */
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -256,6 +254,10 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                        (int)valLen, pVal);
             strcpy(ledStates[CONFIG_LED_GREEN], s_apply_led_command(pVal, valLen, CONFIG_LED_GREEN));
         }
+        else
+        {
+            UART_PRINT("[LED] Shadow delta with green_led not received, keep previous\n\r");
+        }
         
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
                                 pPublish->payloadLength,
@@ -266,6 +268,10 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
             UART_PRINT("[LED] Shadow delta received: blue_led=%.*s\r\n",
                        (int)valLen, pVal);
             strcpy(ledStates[CONFIG_LED_BLUE], s_apply_led_command(pVal, valLen, CONFIG_LED_BLUE));
+        }
+        else
+        {
+            UART_PRINT("[LED] Shadow delta with green_led not received, keep previous\n\r");
         }
 
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -278,9 +284,16 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                        (int)valLen, pVal);
             strcpy(ledStates[CONFIG_LED_RED], s_apply_led_command(pVal, valLen, CONFIG_LED_RED));
         }
+        else
+        {
+            UART_PRINT("[LED] Shadow delta with green_led not received, keep previous\n\r");
+        }
+
+        UART_PRINT("[LED] Shadow delta received: green_led=%s, blue_led=%s, red_led=%s\r\n", ledStates[CONFIG_LED_GREEN], ledStates[CONFIG_LED_BLUE], ledStates[CONFIG_LED_RED]);
     }
     else /* isGetAccepted */
     {
+        UART_PRINT("[LED] isGetAccepted payload %s, payload_len %d\n\r", pPublish->pPayload, pPublish->payloadLength);
         /* Get/accepted payload: full shadow document.
          * Key path for the desired LED state: e.g. "state.desired.green_led" */
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -327,6 +340,8 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
         {
             UART_PRINT("[LED] Shadow get/accepted: no desired.red_led — LED unchanged\r\n");
         }
+
+        UART_PRINT("[LED] Shadow get_accepted received: green_led=%s, blue_led=%s, red_led=%s\r\n", ledStates[CONFIG_LED_GREEN], ledStates[CONFIG_LED_BLUE], ledStates[CONFIG_LED_RED]);
     }
 
     /* Publish reported state so the shadow document stays synchronised */
@@ -345,5 +360,9 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
     if (ret != MQTTSuccess)
     {
         UART_PRINT("[LED] Failed to publish reported state: %d\r\n", (int)ret);
+    }
+    else
+    {
+        UART_PRINT("[LED] Successfully published to topic %s, with payload %s\r\n", s_topicUpdate, reportedPayload);
     }
 }
