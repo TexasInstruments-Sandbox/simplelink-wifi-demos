@@ -132,6 +132,14 @@ void AwsIotOta_OnMqttPublish(MQTTPublishInfo_t *pPublish);
 bool AwsIotOta_IsUpdatePending(void);
 
 /**
+ * @brief Return success if sem_post() succeeds.
+ *
+ * @return @c 0  if @c sem_post() succeeds.
+ * @return @c -1 otherwise.
+ */
+int AwsIotOta_Signal(void);
+
+/**
  * @brief Execute the pending OTA job (blocking).
  *
  * For each component in the pending job:

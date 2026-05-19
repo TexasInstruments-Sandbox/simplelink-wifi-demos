@@ -11,7 +11,7 @@
 
     <project
         title="AWS IOT Client"
-        name="aws_iot_project_LP_EM_CC35X1_freertos_ticlang_10_10_00_18_projectspec"
+        name="aws_iot_project_LP_EM_CC35X1_freertos_ticlang"
         configurations="Debug"
         toolChain="TICLANG"
         connection="TIXDS110_Connection.xml"

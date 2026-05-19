@@ -357,14 +357,14 @@ void prvAwsDemoTask( void * pvParameters )
 	                {
 	                    break;
 	                }
-
+#if 0
 	                UART_PRINT("[Main] Executing firmware update...\r\n");
 	                if (AwsIotOta_ExecuteUpdate() != 0)
 	                {
 	                    UART_PRINT("[Main] Update failed — reconnecting\r\n");
 	                    break;
 	                }
-					
+#endif					
 	                /* ExecuteUpdate returned 0 without rebooting (target version
 	                 * already installed) — loop back to resume telemetry. */
 	            }				

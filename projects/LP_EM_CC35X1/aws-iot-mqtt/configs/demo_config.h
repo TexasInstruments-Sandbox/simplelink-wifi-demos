@@ -134,27 +134,9 @@ extern void vLoggingPrintf( const char * pcFormatString,
  * #define CLIENT_CERT_PATH    "...insert here..."
  */
 
- #define democonfigCLIENT_CERTIFICATE_PEM                                   \
- "-----BEGIN CERTIFICATE-----\r\n"                                      \
- "MIIDWTCCAkGgAwIBAgIUVPkA5skDAfSZkBtW4B8YSHyIEegwDQYJKoZIhvcNAQEL\r\n" \
- "BQAwTTFLMEkGA1UECwxCQW1hem9uIFdlYiBTZXJ2aWNlcyBPPUFtYXpvbi5jb20g\r\n" \
- "SW5jLiBMPVNlYXR0bGUgU1Q9V2FzaGluZ3RvbiBDPVVTMB4XDTI2MDUxNDE3NDQ0\r\n" \
- "NFoXDTQ5MTIzMTIzNTk1OVowHjEcMBoGA1UEAwwTQVdTIElvVCBDZXJ0aWZpY2F0\r\n" \
- "ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMemuVNNX7ZLCGH9zfuy\r\n" \
- "3VGjkHNCntksCbyI6x89ZjQ2n2MxeRZo/JyUK2ATk89mB2jHa3nCe1bIq139yLzW\r\n" \
- "CfNIVMsSWWrmVpOykWotvvzgir2b9Pj02NUQmVcxVHs4UGfbAllWOBYPl0OFCXcq\r\n" \
- "GjBTSFE8N3f3DPt5TlsXutPy5irssF8nyDfQUjHwtPQVw7B2IaiKZwPMQS7tTWyi\r\n" \
- "93km4s9Fd5elwMMVGX08QB6IbZvGxoQGmSRLxCsEOcGc53ESgem8kKlk9Kd8lH3Q\r\n" \
- "OvbnYXOBpdqIbp3k58XvgHlAD++Kr3tqLxRj7XMtJ4F4neZnjsk7WpfwX/t+8voJ\r\n" \
- "wTMCAwEAAaNgMF4wHwYDVR0jBBgwFoAUqp758B9+yC8E1INGx4xJHT4TDPMwHQYD\r\n" \
- "VR0OBBYEFDYMWyDGSSKG+yuamTyN2p9bXtQhMAwGA1UdEwEB/wQCMAAwDgYDVR0P\r\n" \
- "AQH/BAQDAgeAMA0GCSqGSIb3DQEBCwUAA4IBAQAf1CfrKBPMJJD/D2ZRKYQ5dBYQ\r\n" \
- "WFmgNG5Hgh97aKUTbiOAyHEvUNMAIqA3jbca+iNg8Qm/rJhZAdHEcPeVUZM7IXBC\r\n" \
- "9XNILawXz8QAzaDyeuSq1bJ6mrSdn8+uG1E9q/mm6FS2lQt+8jgSkE7Av4MuW5Zh\r\n" \
- "9UTQPaG0NuUbhvNLxfJisXrn4vmQx2a+bWAcPI1T/g3uyPm06kUoX8vKW031DudL\r\n" \
- "V6/7T+keTZbGilk4dS9GdsqFrh9HFJez3og7F15xz7XRQk25NZPbtkj2YFY5YenB\r\n" \
- "MacYQhNzcb8KotvPOLVoHK7pqwvLO3hYPxxgfVlpHopPpbSJfS1rnz0gxUut\r\n"     \
- "-----END CERTIFICATE-----\r\n"                                        \ 
+#ifndef democonfigCLIENT_CERTIFICATE_PEM
+    #error "please fill out the client certificate in PEM format"
+#endif    
 
 /**
  * @brief Path of the file containing the client's private key.
@@ -168,34 +150,9 @@ extern void vLoggingPrintf( const char * pcFormatString,
  * #define CLIENT_PRIVATE_KEY_PATH    "...insert here..."
  */
 
- #define democonfigCLIENT_PRIVATE_KEY_PEM                               \
- "-----BEGIN RSA PRIVATE KEY-----\r\n"                                  \
- "MIIEpAIBAAKCAQEAx6a5U01ftksIYf3N+7LdUaOQc0Ke2SwJvIjrHz1mNDafYzF5\r\n" \
- "Fmj8nJQrYBOTz2YHaMdrecJ7VsirXf3IvNYJ80hUyxJZauZWk7KRai2+/OCKvZv0\r\n" \
- "+PTY1RCZVzFUezhQZ9sCWVY4Fg+XQ4UJdyoaMFNIUTw3d/cM+3lOWxe60/LmKuyw\r\n" \
- "XyfIN9BSMfC09BXDsHYhqIpnA8xBLu1NbKL3eSbiz0V3l6XAwxUZfTxAHohtm8bG\r\n" \
- "hAaZJEvEKwQ5wZzncRKB6byQqWT0p3yUfdA69udhc4Gl2ohuneTnxe+AeUAP74qv\r\n" \
- "e2ovFGPtcy0ngXid5meOyTtal/Bf+37y+gnBMwIDAQABAoIBAQCQME3Z5qCARBJK\r\n" \
- "ywVPiW8jfdBeHbghOhfSDMRaLHq6rNRRzDIaSDpgTvZAjgMLHzGsr5FkP1vaYlS5\r\n" \
- "LgcisiY/iHaMrrTban0OcEFrAJzVfslUhOTYQ+SxhCpqeVr9Hr+bMeWxZX5eGGZz\r\n" \
- "QgqDAGonio5I9QdOYaMDnylCypGIbbbWCCc3+KoTNtHVVJ2osBmhSCPaxIt/arLD\r\n" \
- "l06ttI6Jt8O+sO1mY42avH0WDtXEighLt+6OyvaorzIlfBa7jazrbAZwJqs7uwBh\r\n" \
- "BuBoF/QxpbJ1VPwr/1n7u2+lczktE5YL6y9kT5Rqej9iG0rwBMNRiSpsAn4GttYj\r\n" \
- "RW4ftMlhAoGBAOIcCf4Zzt4ogB8/CYSWDTm+CugE/fra2tOfMCJG/nHeJ5uZ29to\r\n" \
- "b4uIaMH/Rn606HEcSdfPagqliLayIKLKJSqMFJlLmboVbpKHFubGYNXP/D2QQMLl\r\n" \
- "qlmnJ4L2iPpFq2Zr54q8vq4qzSEu5+qHeGcpQdW63wJyVycFWo1Wd8ORAoGBAOIL\r\n" \
- "Se5jWwM7jqGvpKwumacscHyyVtY/KTkry9ip/iHYeJUWF6mBHyJmXqbjmHpL+FPq\r\n" \
- "P9xyefGcn84P6PLV7nTnaOpdIM1snNzvzctGfQSkGpcdZ9T9xdh0v/X8dK+vSklG\r\n" \
- "MAXQqNPl6bbcyuoWFwVDghJQsZXkRHJzPiPwQs6DAoGBAMsDt+khjP8lSBxGAiq8\r\n" \
- "e3V779jxGoWQ2WenB5XPPohImjF4jNHMTFLxEHYW2VnM3uMoLhkKD0Et7blz6B+h\r\n" \
- "9orkKV6WZZmRwqznhCWCutFfJDC2g586jKBgl/ZbmxNzWHjmq4eC/oXswi9oKS0H\r\n" \
- "o5Ckl4rqdW+B8ESF5w7+MxwxAoGAEHgwF81naTHir4cjoWP30AVd4MgBqbSKZV76\r\n" \
- "iDvCh2bFSl+Es9XzlccNqG02w9pbKooLwx0YI3F89z+TgnXx3NSrgT/tzunV+AcE\r\n" \
- "4IWvQDJQuafr08n1q1K+VcbiHZbQ+8vAXfwZAO9keu1VX37iiIClrn3wonIyRoB9\r\n" \
- "C5NK2s8CgYAUfOmVphrMJj3LZN1qJRLt4pYSVw3JYpwH0YEh/zuwxz6BeCcrf6Sx\r\n" \
- "xjkniCnkQXxl7IRCtMJ+eAP9ewsHK+khhdEc5+12Zq4Aq4y/5KqlbQh0rJ+zXCK3\r\n" \
- "bH4VSPbXIHY6MJ9eg7qTR/FxM2pvkq7C01GxFo+4gxzFBamOZgHxaA==\r\n"                                             \
- "-----END RSA PRIVATE KEY-----\r\n"                                    \ 
+#ifndef democonfigCLIENT_PRIVATE_KEY_PEM
+    #error "please fill out the client key in PEM format"
+#endif
 
 /**
  * @brief The username value for authenticating client to MQTT broker when

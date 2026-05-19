@@ -37,6 +37,7 @@
 /* AWS IoT service headers */
 #include "demo_config.h"
 #include "aws_iot_telemetry.h"
+#include "aws_iot_ota.h"
 
 /* AWS IoT Hub */
 #include "aws_iot_mqtt.h"
@@ -771,8 +772,8 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
             /* Check if the publish callback (OTA handler) signalled a pending job */
             if (AwsIotOta_IsUpdatePending())
             {
-                UART_PRINT("[Telemetry] OTA job pending — pausing telemetry\r\n");
-                return AWS_IOT_TELEMETRY_OTA_PENDING;
+                UART_PRINT("[Telemetry] OTA job pending — signal to OTA thread\r\n");
+                AwsIotOta_Signal();
             }	
         }
     }

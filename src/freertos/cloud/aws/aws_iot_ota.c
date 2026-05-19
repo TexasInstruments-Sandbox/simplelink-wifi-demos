@@ -26,6 +26,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* POSIX Header files */
+#include <pthread.h>
+#include <semaphore.h>
+
 /* FreeRTOS */
 #include "FreeRTOS.h"
 #include "task.h"
@@ -51,6 +55,8 @@
 /* --------------------------------------------------------------------------
  * Compile-time configuration
  * --------------------------------------------------------------------------*/
+/** @brief stack size for OTA operations. */
+#define OTA_TASK_STACK_SIZE  (12 * 1024)
 
 /** @brief MQTT packet ID base for OTA operations. */
 #define OTA_MQTT_PACKET_ID_BASE  200U
@@ -60,6 +66,9 @@
 
 /** @brief Minimum of two unsigned values. */
 #define OTA_MIN(a, b)  (((a) < (b)) ? (a) : (b))
+
+/* OTA pending semaphore */
+sem_t otaPendSem;
 
 /* --------------------------------------------------------------------------
  * Module-level state
@@ -694,12 +703,37 @@ static uint16_t next_packet_id(void)
 }
 
 /* --------------------------------------------------------------------------
+ * Private API
+ * --------------------------------------------------------------------------*/
+
+void* OtaTaskFunction(void *arg) 
+{
+      while (1) 
+      {
+          /* Wait until an OTA job is pending */
+          sem_wait(&otaPendSem);
+
+          /* Call ota_https_download() */
+          if (AwsIotOta_ExecuteUpdate() != 0)
+          {
+            UART_PRINT("[OTA] Update failed\r\n");
+          }
+      }
+
+      return NULL;
+  }
+
+/* --------------------------------------------------------------------------
  * Public API
  * --------------------------------------------------------------------------*/
 
 int AwsIotOta_Init(MQTTContext_t *pMqttCtx)
 {
     const char *thingName;
+    pthread_t otaThread;
+    pthread_attr_t attrs;
+    struct sched_param priParam;
+    int ret;
 
     if (pMqttCtx == NULL)
     {
@@ -729,6 +763,37 @@ int AwsIotOta_Init(MQTTContext_t *pMqttCtx)
     memset(&s_job, 0, sizeof(s_job));
 
     UART_PRINT("[OTA] Initialised for thing: %s\r\n", s_thingName);
+
+    /* Initialize the attributes structure with default values */
+    pthread_attr_init(&attrs);
+
+    /* Create an OTA thread to run in the background.
+       Set priority, detach state, and stack size attributes */
+    priParam.sched_priority = 3;
+    ret  = pthread_attr_setschedparam(&attrs, &priParam);
+    ret |= pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+    ret |= pthread_attr_setstacksize(&attrs, OTA_TASK_STACK_SIZE);
+    if (ret != 0)
+    {
+        /* failed to set attributes */
+        UART_PRINT("[OTA] failed to set OTA task attributes\r\n");
+        return -1;
+    }
+
+    ret = pthread_create(&otaThread, &attrs, OtaTaskFunction, NULL);
+    if (ret != 0)
+    {
+        UART_PRINT("[OTA] failed to create an OTA task\r\n");
+        return -1;
+    }
+
+    ret = sem_init(&otaPendSem, 0, 0);
+    if (ret != 0)
+    {
+        UART_PRINT("[OTA] failed to create a semaphore for OTA\r\n");
+        return -1;
+    }
+    
     return 0;
 }
 
@@ -844,6 +909,11 @@ void AwsIotOta_OnMqttPublish(MQTTPublishInfo_t *pPublish)
 bool AwsIotOta_IsUpdatePending(void)
 {
     return s_update_pending;
+}
+
+int AwsIotOta_Signal(void)
+{
+    return sem_post(&otaPendSem);
 }
 
 /**
