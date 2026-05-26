@@ -127,7 +127,7 @@ void ButtonSw1EventHandler(BUTTON_IF_events_bm events)
 
     if ( (events & BUTTON_IF_EV_CLICKED) || (events & BUTTON_IF_EV_LONG_CLICKED) )
     {
-        UART_PRINT("[Main] SW1 button pressed, trigger AWS connect/disconnect\r\n");
+        LogInfo( ("SW1 button pressed, trigger AWS connect/disconnect\r\n") );
 
         xEventGroupSetBitsFromISR(s_btnEvents, BTN_EVT_SW1, &higher);
         // Yield ONLY if higher-priority task is waiting
@@ -144,7 +144,7 @@ void ButtonSw2EventHandler(BUTTON_IF_events_bm events)
 
     if ( (events & BUTTON_IF_EV_CLICKED) || (events & BUTTON_IF_EV_LONG_CLICKED) )
     {
-        UART_PRINT("[Main] SW1 button pressed, trigger OTA update\r\n");
+        LogInfo( ("SW1 button pressed, trigger OTA update\r\n") );
 
         xEventGroupSetBitsFromISR(s_btnEvents, BTN_EVT_SW2, &higher);
         // Yield ONLY if higher-priority task is waiting
@@ -169,7 +169,7 @@ static int s_telemetry_tick(void)
     if (ButtonHandler_Poll() & BTN_EVT_SW1)
     {
         ButtonHandler_ClearEvents(BTN_EVT_SW1);
-        UART_PRINT("[Main] trigger AWS connect/disconnect\r\n");
+        LogInfo( ("trigger AWS connect/disconnect\r\n") );
         return 1;
     }
 
@@ -177,7 +177,7 @@ static int s_telemetry_tick(void)
     if (ButtonHandler_Poll() & BTN_EVT_SW2)
     {
         ButtonHandler_ClearEvents(BTN_EVT_SW2);
-        UART_PRINT("[Main] trigger OTA update\r\n");
+        LogInfo( ("trigger OTA update\r\n") );
     }
 
     return 0;
@@ -256,9 +256,6 @@ static char *IP4ToStr(ip4addr_t ipAddress)
 
 static void OnWifiEvent(WifiConnStatus_e status, void *params)
 {
-    ConnectCmd_t ConnectParams;
-    int32_t             RetVal = -1;
-
     switch (status)
     {
         case WIFI_STATUS_CONNECTED_IP:
@@ -266,24 +263,24 @@ static void OnWifiEvent(WifiConnStatus_e status, void *params)
             TCPIP_IF_getIp4Addr(params, &gIp4Addr, &gIp4Mask, &gIp4GW);
             if(gIp4Addr)
             {
-                UART_PRINT("[Main] OnWifiEvent(CONNECTED_IP): addr=%s\r\n", IP4ToStr(gIp4Addr));
-                UART_PRINT("                            mask=%s\r\n", IP4ToStr(gIp4Mask));
-                UART_PRINT("                            gw=%s\r\n", IP4ToStr(gIp4GW));
+                LogInfo( ("OnWifiEvent(CONNECTED_IP): addr=%s\r\n", IP4ToStr(gIp4Addr)) );
+                LogInfo( ("                            mask=%s\r\n", IP4ToStr(gIp4Mask)) );
+                LogInfo( ("                            gw=%s\r\n", IP4ToStr(gIp4GW)) );
             }
             else
             {
-                UART_PRINT("[Main] OnWifiEvent(CONNECTED_IP): IPv6 only\r\n");
+                LogInfo( ("OnWifiEvent(CONNECTED_IP): IPv6 only\r\n") );
             }
             s_is_connected_to_internet = true;
         }
         break;
 
         case WIFI_STATUS_DISCONNECTED:
-            UART_PRINT("[Main] OnWifiEvent - Disconnected (%d)\r\n", status);
+            LogInfo( ("OnWifiEvent - Disconnected (%d)\r\n", status) );
             s_is_connected_to_internet = false;
             break;
         default:
-            UART_PRINT("[Main] OnWifiEvent(%d)\r\n", status);
+            LogInfo( ("OnWifiEvent(%d)\r\n", status) );
             break;
     }
 }
@@ -298,29 +295,29 @@ void prvAwsDemoTask( void * pvParameters )
 
     ( void ) pvParameters;
 
-    UART_PRINT("[Main] AWS IoT demo - publish and subscribe.\r\n");
+    LogInfo( ("[Main] AWS IoT demo - publish and subscribe.\r\n") );
 
     telStatus = AwsIotTelemetry_Init();
     if (telStatus == AWS_IOT_TELEMETRY_SUCCESS)
     {
-        UART_PRINT("[Main] Sensors initialized.\r\n");
+        LogInfo( ("Sensors initialized.\r\n") );
     }
     else
     {
-        UART_PRINT("[Main] Failed to initialize sensors.\r\n");
+        LogError( ("Failed to initialize sensors.\r\n") );
     }
 
     for( ; ; )
     {
         if( xAwsSample_IsConnectedToInternet() )
         {
-            UART_PRINT("[Main] Connecting to AWS IoT Core...\r\n");
+            LogInfo( ("Connecting to AWS IoT Core...\r\n") );
             
             telStatus = AwsIotTelemetry_Connect();
             if (telStatus == AWS_IOT_TELEMETRY_SUCCESS)
             {
-                UART_PRINT("[Main] Connected. Publishing every %u ms.\r\n",
-                        (unsigned)AWS_IOT_TELEMETRY_PERIOD_MS);
+                LogInfo( ("Connected. Publishing every %u ms.\r\n",
+                        (unsigned)AWS_IOT_TELEMETRY_PERIOD_MS) );
 
                 /* Route all incoming PUBLISHes through the shared dispatcher */
                 AwsIotTelemetry_RegisterPublishCallback(s_mqtt_dispatch);
@@ -356,29 +353,21 @@ void prvAwsDemoTask( void * pvParameters )
 	                if (runStatus != AWS_IOT_TELEMETRY_OTA_PENDING)
 	                {
 	                    break;
-	                }
-#if 0
-	                UART_PRINT("[Main] Executing firmware update...\r\n");
-	                if (AwsIotOta_ExecuteUpdate() != 0)
-	                {
-	                    UART_PRINT("[Main] Update failed — reconnecting\r\n");
-	                    break;
-	                }
-#endif					
+	                }				
 	                /* ExecuteUpdate returned 0 without rebooting (target version
 	                 * already installed) — loop back to resume telemetry. */
 	            }				
             }
         	else
         	{
-            		UART_PRINT("[Main] Connect failed (error %d).\r\n",
-                     	  (int)telStatus);
+            		LogError( ("Connect failed (error %d).\r\n",
+                     	  (int)telStatus) );
         	}
         	AwsIotTelemetry_Disconnect();
 
         }
 
-        LogInfo( ( "[Main] Short delay before starting the next iteration.... \r\n\r\n" ) );
+        LogInfo( ( "Short delay before starting the next iteration.... \r\n\r\n" ) );
         vTaskDelay( sampleawsiotDELAY_BETWEEN_DEMO_ITERATIONS_TICKS );
     }
 }
@@ -386,20 +375,16 @@ void prvAwsDemoTask( void * pvParameters )
 
 void *main_entry(void *args)
 {
-    uint32_t ticksToSleep;
     int32_t RetVal = -1;
 
     HWREG(ICACHE_BASE + 0x84) |= 0x00000001  ;//OSPREY_MX-38
     HWREG(ICACHE_BASE + 0x4) |= 0xc0000000  ;//OSPREY_MX-38
     //HWREG(ICACHE_BASE + 0x4) |= 0x80000000  ;//OSPREY_MX-38, this is for 64M cache, instead CRAM
 
-    ConnectCmd_t ConnectParams;
     OsiReturnVal_e rc;
     char accStr[100];
     uint8_t netIdx;
     WlanNetworkEntry_t   netEntry;
-
-    uint32_t epochTime;
 
     Board_init();
 
@@ -433,19 +418,19 @@ void *main_entry(void *args)
     if(RetVal < 0)
     {
         /* Handle Error */
-        UART_PRINT(
-            "[Main] Network Terminal - Unable to retrieve device information \n");
-        return(NULL);
+        LogError( (
+            "Network Terminal - Unable to retrieve device information \n");
+        return(NULL) );
     }
 
     rc = WIFI_IF_init(true);
     if (rc == OSI_OK)
     {
-        UART_PRINT("[Main] WiFi IF init completed successfully.\r\n");
+        LogInfo( ("WiFi IF init completed successfully.\r\n") );
     }
     else
     {
-        UART_PRINT("[Main] Failed to init WiFi IF Err:%d\r\n", rc);
+        LogError( ("Failed to init WiFi IF Err:%d\r\n", rc) );
     }
 
     // delay needed for proper printout
@@ -454,11 +439,11 @@ void *main_entry(void *args)
     rc = WIFI_IF_start(OnWifiEvent, WIFI_SERVICE_LVL_IP, 10000, &hWifiConn);
     if (rc == OSI_OK)
     {
-        UART_PRINT("[Main] WiFi IF start completed successfully.\r\n");
+        LogInfo( ("WiFi IF start completed successfully.\r\n") );
     }
     else
     {
-        UART_PRINT("[Main] Failed to start WiFi IF Err:%d\r\n", rc);
+        LogError( ("Failed to start WiFi IF Err:%d\r\n", rc) );
     }
 
     // for(;;);
@@ -485,14 +470,14 @@ void *main_entry(void *args)
                RetVal = GetCmd((char *)accStr, 100, "please enter the password: ");
                if (strlen((char *)accStr) <= PASSWD_LEN_MAX)
                {
-                   UART_PRINT("[Main] connecting to %s\n\r", netEntry.Ssid);
+                   LogInfo( ("connecting to %s\n\r", netEntry.Ssid) );
                }
 
                rc = WIFI_IF_connect(hWifiConn, netIdx, (int8_t *)accStr, strlen((char *)accStr), WIFI_SERVICE_LVL_IP, 10000);
            }
            else
            {
-               UART_PRINT("[Main] connecting to %s\n\r", netEntry.Ssid);
+               LogInfo( ("connecting to %s\n\r", netEntry.Ssid) );
                rc = WIFI_IF_connect(hWifiConn, netIdx, NULL, 0, WIFI_SERVICE_LVL_IP, 10000);
            }
        }
@@ -508,12 +493,13 @@ void *main_entry(void *args)
     RetVal = sntpWrapper_updateDateTime();
     if (rc != OSI_OK)
     {
-        UART_PRINT("[Main] Setting system date/time failed with error %d\n\r", RetVal);
+        LogError( ("Setting system date/time failed with error %d\n\r", RetVal) );
     }
 
     /* Connect to Azure IoT Hub using AzureIoT APIs */
     prvAwsDemoTask(NULL);
 
+    return NULL;
 }
 
 void *mainThread(void *args)

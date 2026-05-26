@@ -52,6 +52,8 @@
 /* UART terminal */
 #include "uart_term.h"
 
+#define LIBRARY_LOG_NAME    "OTA"
+
 /* --------------------------------------------------------------------------
  * Compile-time configuration
  * --------------------------------------------------------------------------*/
@@ -175,8 +177,8 @@ static int s_fwu_selectTargetSlot(int slot1Id, int slot2Id,
 
     if (ret1 != PSA_SUCCESS || ret2 != PSA_SUCCESS)
     {
-        UART_PRINT("[OTA] Failed to query slots %d/%d (ret1=%d ret2=%d)\r\n",
-                   slot1Id, slot2Id, ret1, ret2);
+        LogError( ("Failed to query slots %d/%d (ret1=%d ret2=%d)\r\n",
+                   slot1Id, slot2Id, ret1, ret2) );
         return -1;
     }
 
@@ -193,7 +195,7 @@ static int s_fwu_selectTargetSlot(int slot1Id, int slot2Id,
         return 0;
     }
 
-    UART_PRINT("[OTA] No suitable target slot for %d/%d\r\n", slot1Id, slot2Id);
+    LogError( ("No suitable target slot for %d/%d\r\n", slot1Id, slot2Id) );
     return -1;
 }
 
@@ -216,22 +218,22 @@ static int s_fwu_prepareSlot(psa_fwu_component_t componentId)
     ret = psa_fwu_query(componentId, &info);
     if (ret != PSA_SUCCESS)
     {
-        UART_PRINT("[OTA] psa_fwu_query(%d) failed: %d\r\n", componentId, ret);
+        LogError( ("psa_fwu_query(%d) failed: %d\r\n", componentId, ret) );
         return -1;
     }
 
-    UART_PRINT("[OTA] Component %d (%s): state=%s, primary=%s, version=%u.%u.%u.%lu\r\n",
+    LogInfo( ("Component %d (%s): state=%s, primary=%s, version=%u.%u.%u.%lu\r\n",
                componentId,
                (componentId < MAX_COMPONENT_ID) ? s_componentName[componentId] : "?",
                (info.state <= PSA_FWU_UPDATED) ? s_componentState[info.state] : "?",
                info.impl.Primary ? "yes" : "no",
                info.version.major, info.version.minor,
-               info.version.patch, (unsigned long)info.version.build);
+               info.version.patch, (unsigned long)info.version.build) );
 
     if (info.impl.Primary)
     {
-        UART_PRINT("[OTA] Error: component %d is PRIMARY — cannot update\r\n",
-                   componentId);
+        LogError( ("Error: component %d is PRIMARY — cannot update\r\n",
+                   componentId) );
         return -1;
     }
 
@@ -243,66 +245,66 @@ static int s_fwu_prepareSlot(psa_fwu_component_t componentId)
 
         case PSA_FWU_FAILED:
         case PSA_FWU_UPDATED:
-            UART_PRINT("[OTA] Cleaning slot %d (state=%s)...\r\n",
-                       componentId, s_componentState[info.state]);
+            LogInfo( ("Cleaning slot %d (state=%s)...\r\n",
+                       componentId, s_componentState[info.state]) );
             ret = psa_fwu_clean(componentId);
             if (ret != PSA_SUCCESS)
             {
-                UART_PRINT("[OTA] psa_fwu_clean(%d) failed: %d\r\n", componentId, ret);
+                LogError( ("psa_fwu_clean(%d) failed: %d\r\n", componentId, ret) );
                 return -1;
             }
             break;
 
         case PSA_FWU_WRITING:
         case PSA_FWU_CANDIDATE:
-            UART_PRINT("[OTA] Cancelling+cleaning slot %d (state=%s)...\r\n",
-                       componentId, s_componentState[info.state]);
+            LogInfo( ("Cancelling+cleaning slot %d (state=%s)...\r\n",
+                       componentId, s_componentState[info.state]) );
             ret = psa_fwu_cancel(componentId);
             if (ret != PSA_SUCCESS)
             {
-                UART_PRINT("[OTA] psa_fwu_cancel(%d) failed: %d\r\n", componentId, ret);
+                LogError( ("psa_fwu_cancel(%d) failed: %d\r\n", componentId, ret) );
                 return -1;
             }
             ret = psa_fwu_clean(componentId);
             if (ret != PSA_SUCCESS)
             {
-                UART_PRINT("[OTA] psa_fwu_clean(%d) failed: %d\r\n", componentId, ret);
+                LogError( ("psa_fwu_clean(%d) failed: %d\r\n", componentId, ret) );
                 return -1;
             }
             break;
 
         case PSA_FWU_STAGED:
         case PSA_FWU_TRIAL:
-            UART_PRINT("[OTA] Rejecting+cleaning slot %d (state=%s)...\r\n",
-                       componentId, s_componentState[info.state]);
+            LogInfo( ("Rejecting+cleaning slot %d (state=%s)...\r\n",
+                       componentId, s_componentState[info.state]) );
             ret = psa_fwu_reject(PSA_ERROR_NOT_PERMITTED);
             if (ret != PSA_SUCCESS && ret != PSA_SUCCESS_REBOOT)
             {
-                UART_PRINT("[OTA] psa_fwu_reject failed: %d\r\n", ret);
+                LogError( ("psa_fwu_reject failed: %d\r\n", ret) );
                 return -1;
             }
             ret = psa_fwu_clean(componentId);
             if (ret != PSA_SUCCESS)
             {
-                UART_PRINT("[OTA] psa_fwu_clean(%d) after reject failed: %d\r\n",
-                           componentId, ret);
+                LogError( ("psa_fwu_clean(%d) after reject failed: %d\r\n",
+                           componentId, ret) );
                 return -1;
             }
             break;
 
         case PSA_FWU_REJECTED:
-            UART_PRINT("[OTA] Cleaning REJECTED slot %d...\r\n", componentId);
+            LogInfo( ("Cleaning REJECTED slot %d...\r\n", componentId) );
             ret = psa_fwu_clean(componentId);
             if (ret != PSA_SUCCESS)
             {
-                UART_PRINT("[OTA] psa_fwu_clean(%d) failed: %d\r\n", componentId, ret);
+                LogError( ("psa_fwu_clean(%d) failed: %d\r\n", componentId, ret) );
                 return -1;
             }
             break;
 
         default:
-            UART_PRINT("[OTA] Component %d: unexpected state %u\r\n",
-                       componentId, info.state);
+            LogWarn( ("Component %d: unexpected state %u\r\n",
+                       componentId, info.state) );
             return -1;
     }
 
@@ -310,12 +312,12 @@ static int s_fwu_prepareSlot(psa_fwu_component_t componentId)
     ret = psa_fwu_query(componentId, &info);
     if (ret != PSA_SUCCESS || info.state != PSA_FWU_READY)
     {
-        UART_PRINT("[OTA] Component %d not READY after prepare (state=%u)\r\n",
-                   componentId, info.state);
+        LogInfo( ("Component %d not READY after prepare (state=%u)\r\n",
+                   componentId, info.state) );
         return -1;
     }
 
-    UART_PRINT("[OTA] Slot %d is READY\r\n", componentId);
+    LogInfo( ("Slot %d is READY\r\n", componentId) );
     return 0;
 }
 
@@ -338,11 +340,11 @@ static void s_fwu_scanPendingStates(int *pTrialCount)
 
         if (info.state == PSA_FWU_TRIAL)
         {
-            UART_PRINT("[OTA] Component %d (%s): %u.%u.%u.%lu [TRIAL]\r\n",
+            LogInfo( ("Component %d (%s): %u.%u.%u.%lu [TRIAL]\r\n",
                        ci,
                        (ci < MAX_COMPONENT_ID) ? s_componentName[ci] : "?",
                        info.version.major, info.version.minor,
-                       info.version.patch, (unsigned long)info.version.build);
+                       info.version.patch, (unsigned long)info.version.build) );
             if (pTrialCount != NULL) { (*pTrialCount)++; }
         }
     }
@@ -395,13 +397,13 @@ static int s_fwu_write_cb(const uint8_t *pData, uint32_t len, void *pCtx)
                                    (size_t)TI_FWU_MANIFEST_SIZE);
             if (psaRet != PSA_SUCCESS)
             {
-                UART_PRINT("[OTA] psa_fwu_start(%d) failed: %d\r\n",
-                           s->targetSlot, (int)psaRet);
+                LogError( ("psa_fwu_start(%d) failed: %d\r\n",
+                           s->targetSlot, (int)psaRet) );
                 s->error = (int)psaRet;
                 return -1;
             }
             s->started = 1;
-            UART_PRINT("[OTA] Manifest received, FWU write started\r\n");
+            LogInfo( ("Manifest received, FWU write started\r\n") );
         }
     }
 
@@ -415,11 +417,11 @@ static int s_fwu_write_cb(const uint8_t *pData, uint32_t len, void *pCtx)
         psaRet = psa_fwu_write(s->targetSlot, imageOffset, pData, len);
         if (psaRet != PSA_SUCCESS)
         {
-            UART_PRINT("[OTA] psa_fwu_write(%d, offset=%lu, len=%lu) failed: %d\r\n",
+            LogInfo( ("psa_fwu_write(%d, offset=%lu, len=%lu) failed: %d\r\n",
                        s->targetSlot,
                        (unsigned long)imageOffset,
                        (unsigned long)len,
-                       (int)psaRet);
+                       (int)psaRet) );
             s->error = (int)psaRet;
             return -1;
         }
@@ -534,7 +536,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
                             (const char **)&pJobId, &jobIdLen, NULL);
     if (jret != JSONSuccess || pJobId == NULL)
     {
-        UART_PRINT("[OTA] Job document: execution.jobId not found\r\n");
+        LogError( ("Job document: execution.jobId not found\r\n") );
         return -1;
     }
     size_t idCopy = (jobIdLen < OTA_MAX_JOB_ID_LEN - 1u) ?
@@ -542,7 +544,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
     memcpy(pJob->jobId, pJobId, idCopy);
     pJob->jobId[idCopy] = '\0';
 
-    UART_PRINT("[OTA] Job ID: %s\r\n", pJob->jobId);
+    LogInfo( ("Job ID: %s\r\n", pJob->jobId) );
 
     /* ---- Extract components array ---- */
     jret = JSON_SearchConst(pPayload, payloadLen,
@@ -550,7 +552,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
                             (const char **)&pComps, &compsLen, &compType);
     if (jret != JSONSuccess || pComps == NULL || compType != JSONArray)
     {
-        UART_PRINT("[OTA] Job document: components array not found\r\n");
+        LogError( ("Job document: components array not found\r\n") );
         return -1;
     }
 
@@ -564,7 +566,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
         if (jret == JSONNotFound) { break; }
         if (jret != JSONSuccess)
         {
-            UART_PRINT("[OTA] JSON_Iterate error: %d\r\n", (int)jret);
+            LogError( ("JSON_Iterate error: %d\r\n", (int)jret) );
             return -1;
         }
         if (pair.value == NULL || pair.valueLength == 0) { continue; }
@@ -576,7 +578,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
                             "type", 4,
                             comp->type, sizeof(comp->type)) != 0)
         {
-            UART_PRINT("[OTA] Component missing 'type'\r\n");
+            LogError( ("Component missing 'type'\r\n") );
             return -1;
         }
 
@@ -585,7 +587,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
         if (json_get_uint32(pair.value, pair.valueLength,
                             "slot1_id", 8, &tmpVal) != 0)
         {
-            UART_PRINT("[OTA] Component missing 'slot1_id'\r\n");
+            LogError( ("Component missing 'slot1_id'\r\n") );
             return -1;
         }
         comp->slot1_id = (uint8_t)tmpVal;
@@ -594,7 +596,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
         if (json_get_uint32(pair.value, pair.valueLength,
                             "slot2_id", 8, &tmpVal) != 0)
         {
-            UART_PRINT("[OTA] Component missing 'slot2_id'\r\n");
+            LogError( ("Component missing 'slot2_id'\r\n") );
             return -1;
         }
         comp->slot2_id = (uint8_t)tmpVal;
@@ -604,7 +606,7 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
                             "url", 3,
                             comp->url, sizeof(comp->url)) != 0)
         {
-            UART_PRINT("[OTA] Component missing 'url'\r\n");
+            LogError (("Component missing 'url'\r\n") );
             return -1;
         }
 
@@ -623,17 +625,17 @@ static int parse_job_document(const char *pPayload, size_t payloadLen,
             comp->size = 0;
         }
 
-        UART_PRINT("[OTA] Component[%u]: type=%s slot1=%u slot2=%u ver=%s size=%lu\r\n",
+        LogInfo( ("Component[%u]: type=%s slot1=%u slot2=%u ver=%s size=%lu\r\n",
                    pJob->numComponents,
                    comp->type, comp->slot1_id, comp->slot2_id,
-                   comp->version, (unsigned long)comp->size);
+                   comp->version, (unsigned long)comp->size) );
 
         pJob->numComponents++;
     }
 
     if (pJob->numComponents == 0)
     {
-        UART_PRINT("[OTA] Job document: no valid components found\r\n");
+        LogError( ("Job document: no valid components found\r\n") );
         return -1;
     }
 
@@ -679,12 +681,12 @@ static void publish_job_status(const char *jobId, const char *status)
     MQTTStatus_t ret = MQTT_Publish(s_mqttCtx, &pub, 0U);
     if (ret != MQTTSuccess)
     {
-        UART_PRINT("[OTA] Failed to publish job status '%s': %d\r\n",
-                   status, (int)ret);
+        LogError( ("Failed to publish job status '%s': %d\r\n",
+                   status, (int)ret) );
     }
     else
     {
-        UART_PRINT("[OTA] Job %s status: %s\r\n", jobId, status);
+        LogInfo( ("Job %s status: %s\r\n", jobId, status) );
     }
 }
 
@@ -716,7 +718,7 @@ void* OtaTaskFunction(void *arg)
           /* Call ota_https_download() */
           if (AwsIotOta_ExecuteUpdate() != 0)
           {
-            UART_PRINT("[OTA] Update failed\r\n");
+            LogError( ("Update failed\r\n") );
           }
       }
 
@@ -737,14 +739,14 @@ int AwsIotOta_Init(MQTTContext_t *pMqttCtx)
 
     if (pMqttCtx == NULL)
     {
-        UART_PRINT("[OTA] Init failed: NULL MQTT context\r\n");
+        LogError( ("Init failed: NULL MQTT context\r\n") );
         return -1;
     }
 
     thingName = AwsIot_GetThingName();
     if (thingName == NULL || thingName[0] == '\0')
     {
-        UART_PRINT("[OTA] Init failed: thing name unavailable\r\n");
+        LogError( ("Init failed: thing name unavailable\r\n") );
         return -1;
     }
 
@@ -762,7 +764,7 @@ int AwsIotOta_Init(MQTTContext_t *pMqttCtx)
     s_update_pending = false;
     memset(&s_job, 0, sizeof(s_job));
 
-    UART_PRINT("[OTA] Initialised for thing: %s\r\n", s_thingName);
+    LogInfo( ("Initialised for thing: %s\r\n", s_thingName) );
 
     /* Initialize the attributes structure with default values */
     pthread_attr_init(&attrs);
@@ -776,21 +778,21 @@ int AwsIotOta_Init(MQTTContext_t *pMqttCtx)
     if (ret != 0)
     {
         /* failed to set attributes */
-        UART_PRINT("[OTA] failed to set OTA task attributes\r\n");
+        LogError( ("failed to set OTA task attributes\r\n") );
         return -1;
     }
 
     ret = pthread_create(&otaThread, &attrs, OtaTaskFunction, NULL);
     if (ret != 0)
     {
-        UART_PRINT("[OTA] failed to create an OTA task\r\n");
+        LogError( ("failed to create an OTA task\r\n") );
         return -1;
     }
 
     ret = sem_init(&otaPendSem, 0, 0);
     if (ret != 0)
     {
-        UART_PRINT("[OTA] failed to create a semaphore for OTA\r\n");
+        LogError( ("failed to create a semaphore for OTA\r\n") );
         return -1;
     }
     
@@ -804,7 +806,7 @@ int AwsIotOta_Subscribe(void)
 
     if (s_mqttCtx == NULL)
     {
-        UART_PRINT("[OTA] Subscribe failed: not initialised\r\n");
+        LogError( ("Subscribe failed: not initialised\r\n") );
         return -1;
     }
 
@@ -821,14 +823,14 @@ int AwsIotOta_Subscribe(void)
     ret = MQTT_Subscribe(s_mqttCtx, subs, 2u, next_packet_id());
     if (ret != MQTTSuccess)
     {
-        UART_PRINT("[OTA] MQTT_Subscribe failed: %d\r\n", (int)ret);
+        LogError( ("MQTT_Subscribe failed: %d\r\n", (int)ret) );
         return -1;
     }
 
     /* Drive the process loop once to receive the SUBACK */
     MQTT_ProcessLoop(s_mqttCtx);
 
-    UART_PRINT("[OTA] Subscribed to Jobs topics\r\n");
+    LogInfo( ("Subscribed to Jobs topics\r\n") );
     return 0;
 }
 
@@ -852,12 +854,12 @@ int AwsIotOta_CheckForUpdate(void)
     ret = MQTT_Publish(s_mqttCtx, &pub, 0U);
     if (ret != MQTTSuccess)
     {
-        UART_PRINT("[OTA] CheckForUpdate publish failed: %d\r\n", (int)ret);
+        LogError( ("CheckForUpdate publish failed: %d\r\n", (int)ret) );
         return -1;
     }
 
-    UART_PRINT("[OTA] Publish to topic %s ...\r\n", s_topicNextGet);
-    UART_PRINT("[OTA] Polling for pending jobs...\r\n");
+    LogInfo( ("Publish to topic %s ...\r\n", s_topicNextGet) );
+    LogInfo( ("Polling for pending jobs...\r\n") );
     return 0;
 }
 
@@ -887,23 +889,26 @@ void AwsIotOta_OnMqttPublish(MQTTPublishInfo_t *pPublish)
     if (pPublish->pPayload == NULL || pPublish->payloadLength == 0)
     {
         /* Empty payload on notify-next means no pending jobs */
-        UART_PRINT("[OTA] No pending jobs\r\n");
+        LogWarn( ("No pending jobs\r\n") );
         return;
     }
 
-    UART_PRINT("[OTA] Job notification received (%u bytes)\r\n",
-               (unsigned)pPublish->payloadLength);
+    LogInfo( ("Job notification received (%u bytes)\r\n",
+               (unsigned)pPublish->payloadLength) );
+
+    LogDebug( ("Raw payload (%u bytes): %.300s...\r\n",
+             (unsigned)pPublish->payloadLength, (const char *)pPublish->pPayload) );
 
     if (parse_job_document((const char *)pPublish->pPayload,
                            pPublish->payloadLength, &s_job) == 0)
     {
         s_update_pending = true;
-        UART_PRINT("[OTA] Job parsed: %u component(s) pending\r\n",
-                   s_job.numComponents);
+        LogInfo( ("Job parsed: %u component(s) pending\r\n",
+                   s_job.numComponents) );
     }
     else
     {
-        UART_PRINT("[OTA] Failed to parse job document\r\n");
+        LogError( ("Failed to parse job document\r\n") );
     }
 }
 
@@ -947,12 +952,12 @@ int AwsIotOta_ExecuteUpdate(void)
 
     if (!s_update_pending || s_job.numComponents == 0)
     {
-        UART_PRINT("[OTA] ExecuteUpdate called with no pending job\r\n");
+        LogError( ("ExecuteUpdate called with no pending job\r\n") );
         return -1;
     }
 
-    UART_PRINT("[OTA] Starting update: job=%s, components=%u\r\n",
-               s_job.jobId, s_job.numComponents);
+    LogInfo( ("Starting update: job=%s, components=%u\r\n",
+               s_job.jobId, s_job.numComponents) );
 
     publish_job_status(s_job.jobId, "IN_PROGRESS");
 
@@ -966,15 +971,15 @@ int AwsIotOta_ExecuteUpdate(void)
         psa_fwu_image_version_t primaryVer;
         uint32_t            bytesReceived = 0;
 
-        UART_PRINT("[OTA] Component %u/%u: %s (ver=%s, size=%lu)\r\n",
+        LogInfo( ("Component %u/%u: %s (ver=%s, size=%lu)\r\n",
                    i + 1u, s_job.numComponents,
-                   comp->type, comp->version, (unsigned long)comp->size);
+                   comp->type, comp->version, (unsigned long)comp->size) );
 
         /* Select the non-primary target slot */
         if (s_fwu_selectTargetSlot(comp->slot1_id, comp->slot2_id,
                                    &targetSlot, &primaryVer) != 0)
         {
-            UART_PRINT("[OTA] selectTargetSlot failed for %s\r\n", comp->type);
+            LogError( ("selectTargetSlot failed for %s\r\n", comp->type) );
             ret = -1;
             goto fail;
         }
@@ -992,8 +997,8 @@ int AwsIotOta_ExecuteUpdate(void)
                 primaryVer.patch == jobVer.patch &&
                 primaryVer.build == jobVer.build)
             {
-                UART_PRINT("[OTA] %s already at v%s — publishing SUCCEEDED\r\n",
-                           comp->type, comp->version);
+                LogInfo( ("%s already at v%s — publishing SUCCEEDED\r\n",
+                           comp->type, comp->version) );
                 publish_job_status(s_job.jobId, "SUCCEEDED");
                 s_update_pending = false;
                 return 0;
@@ -1003,8 +1008,8 @@ int AwsIotOta_ExecuteUpdate(void)
         /* Prepare slot for writing */
         if (s_fwu_prepareSlot(targetSlot) != 0)
         {
-            UART_PRINT("[OTA] prepareSlot(%d) failed for %s\r\n",
-                       (int)targetSlot, comp->type);
+            LogError( ("prepareSlot(%d) failed for %s\r\n",
+                       (int)targetSlot, comp->type) );
             ret = -1;
             goto fail;
         }
@@ -1022,13 +1027,13 @@ int AwsIotOta_ExecuteUpdate(void)
         req.dataCb    = s_fwu_write_cb;
         req.pUserCtx  = &dlCtx;
 
-        UART_PRINT("[OTA] Downloading %s...\r\n", comp->type);
+        LogInfo( ("Downloading %s...\r\n", comp->type) );
         int dlRet = ota_https_download(&req, &bytesReceived);
 
         if (dlRet != 0 || dlCtx.error != 0)
         {
-            UART_PRINT("[OTA] Download failed for %s (dlRet=%d, fwuErr=%d)\r\n",
-                       comp->type, dlRet, dlCtx.error);
+            LogError( ("Download failed for %s (dlRet=%d, fwuErr=%d)\r\n",
+                       comp->type, dlRet, dlCtx.error) );
             psa_fwu_cancel(targetSlot);
             ret = -1;
             goto fail;
@@ -1038,25 +1043,25 @@ int AwsIotOta_ExecuteUpdate(void)
         psa_status_t psaRet = psa_fwu_finish(targetSlot);
         if (psaRet != PSA_SUCCESS)
         {
-            UART_PRINT("[OTA] psa_fwu_finish(%d) failed: %d\r\n",
+            UART_PRINT("psa_fwu_finish(%d) failed: %d\r\n",
                        (int)targetSlot, (int)psaRet);
             psa_fwu_cancel(targetSlot);
             ret = -1;
             goto fail;
         }
 
-        UART_PRINT("[OTA] %s: %lu bytes → CANDIDATE\r\n",
-                   comp->type, (unsigned long)bytesReceived);
+        LogInfo( ("%s: %lu bytes → CANDIDATE\r\n",
+                   comp->type, (unsigned long)bytesReceived) );
     }
 
     /* ----------------------------------------------------------------
      * Install all CANDIDATEs at once → STAGED
      * ----------------------------------------------------------------*/
-    UART_PRINT("[OTA] Installing %u CANDIDATE(s)...\r\n", s_job.numComponents);
+    LogInfo( ("Installing %u CANDIDATE(s)...\r\n", s_job.numComponents) );
     psa_status_t installRet = psa_fwu_install();
     if (installRet != PSA_SUCCESS && installRet != PSA_SUCCESS_REBOOT)
     {
-        UART_PRINT("[OTA] psa_fwu_install() failed: %d\r\n", (int)installRet);
+        LogError( ("psa_fwu_install() failed: %d\r\n", (int)installRet) );
         ret = -1;
         goto fail;
     }
@@ -1067,7 +1072,7 @@ int AwsIotOta_ExecuteUpdate(void)
     publish_job_status(s_job.jobId, "SUCCEEDED");
     s_update_pending = false;
 
-    UART_PRINT("[OTA] All components STAGED. Rebooting...\r\n");
+    LogInfo( ("All components STAGED. Rebooting...\r\n") );
 
     /* Small delay to allow the MQTT publish to be transmitted */
     vTaskDelay(500U / portTICK_PERIOD_MS);
@@ -1091,25 +1096,25 @@ void AwsIotOta_HandleTrialState(void)
 
     if (trialCount > 0)
     {
-        UART_PRINT("[OTA] %d component(s) in TRIAL — accepting\r\n", trialCount);
+        LogInfo( ("%d component(s) in TRIAL — accepting\r\n", trialCount) );
         psa_status_t ret = psa_fwu_accept();
         if (ret == PSA_SUCCESS || ret == PSA_SUCCESS_REBOOT)
         {
             /* A second reboot is required to permanently commit the accepted
              * image as PRIMARY.  Without it the bootloader sees the slot still
              * in TRIAL and rolls back on every power cycle. */
-            UART_PRINT("[OTA] All TRIAL components accepted — rebooting to commit\r\n");
+            LogInfo( ("All TRIAL components accepted — rebooting to commit\r\n") );
             vTaskDelay(100U / portTICK_PERIOD_MS);
             psa_fwu_request_reboot();
             while (1) { vTaskDelay(100U / portTICK_PERIOD_MS); }
         }
         else
         {
-            UART_PRINT("[OTA] psa_fwu_accept() failed: %d\r\n", (int)ret);
+            LogError( ("psa_fwu_accept() failed: %d\r\n", (int)ret) );
         }
     }
     else
     {
-        UART_PRINT("[OTA] No TRIAL components\r\n");
+        LogInfo( ("No TRIAL components\r\n") );
     }
 }

@@ -61,6 +61,8 @@
 /* SNTP-backed wall-clock time (epoch seconds, set by sntpWrapper_updateDateTime) */
 #include "date_time_service.h"
 
+#define LIBRARY_LOG_NAME    "Telemetry"
+
 /**
  * @brief The maximum number of retries for network operation with server.
  */
@@ -239,7 +241,7 @@ static void telemetry_event_callback(MQTTContext_t               *pCtx,
         }
         else
         {
-            UART_PRINT("[Telemetry] PUBLISH received (no handler registered)\r\n");
+            LogInfo( ("PUBLISH received (no handler registered)\r\n") );
         }
     }
 
@@ -266,16 +268,16 @@ static void telemetry_event_callback(MQTTContext_t               *pCtx,
             subAckStatus = (MQTTSubAckStatus_t)pucPayload[ulTopicCount];
             switch (subAckStatus) {
               case 0x00:
-                UART_PRINT("[Telemetry] SUBACK received %d: Subscribed QoS 0\r\n", ulTopicCount);
+                LogInfo( ("SUBACK received %d: Subscribed QoS 0\r\n", ulTopicCount) );
                 break;
               case 0x01:
-                UART_PRINT("[Telemetry] SUBACK received %d: Subscribed QoS 1\r\n", ulTopicCount);
+                LogInfo( ("SUBACK received %d: Subscribed QoS 1\r\n", ulTopicCount) );
                 break;
               case 0x02:
-                UART_PRINT("[Telemetry] SUBACK received %d: Subscribed QoS 2\r\n", ulTopicCount);
+                LogInfo( ("SUBACK received %d: Subscribed QoS 2\r\n", ulTopicCount) );
                 break;
               case 0x80:
-                UART_PRINT("[Telemetry] SUBACK received %d: Subscription FAILED\r\n", ulTopicCount);
+                LogInfo( ("SUBACK received %d: Subscription FAILED\r\n", ulTopicCount) );
                 break;
             }
         }
@@ -283,20 +285,20 @@ static void telemetry_event_callback(MQTTContext_t               *pCtx,
 
     if ((pPacketInfo->type & 0xF0U) == MQTT_PACKET_TYPE_PUBACK)
     {
-        UART_PRINT("[Telemetry] PUBACK received for packet Id %u\r\n", pDeserializedInfo->packetIdentifier);
+        LogInfo( ("PUBACK received for packet Id %u\r\n", pDeserializedInfo->packetIdentifier) );
     }
 
     if ((pPacketInfo->type & 0xF0U) == MQTT_PACKET_TYPE_UNSUBACK)
     {
-        UART_PRINT("[Telemetry] UNSUBACK received for packet Id %u\r\n", pDeserializedInfo->packetIdentifier);
+        LogInfo( ("UNSUBACK received for packet Id %u\r\n", pDeserializedInfo->packetIdentifier) );
     }
 
     if ((pPacketInfo->type & 0xF0U) == MQTT_PACKET_TYPE_PINGRESP)
     {
          /* Nothing to be done from application as library handles
         * PINGRESP with the use of MQTT_ProcessLoop API function. */
-        UART_PRINT("[Telemetry] PINGRESP should not be handled by the application "
-                       "callback when using MQTT_ProcessLoop.\n" );
+        LogWarn( ("PINGRESP should not be handled by the application "
+                       "callback when using MQTT_ProcessLoop.\n" ) );
     }
 }
 
@@ -351,7 +353,7 @@ uint32_t prvConnectToServerWithBackoffRetries( const char * pcHostName,
      */
     do
     {
-        UART_PRINT( "[Telemetry] Creating a TLS connection to %s:%lu.\r\n", pcHostName, port );
+        LogInfo( ( "Creating a TLS connection to %s:%lu.\r\n", pcHostName, port ) );
         /* Attempt to create a mutually authenticated TLS connection. */
         xNetworkStatus = TLS_Socket_Connect( pxNetworkContext,
                                              pcHostName, port,
@@ -370,13 +372,13 @@ uint32_t prvConnectToServerWithBackoffRetries( const char * pcHostName,
 
             if( xBackoffAlgStatus == BackoffAlgorithmRetriesExhausted )
             {
-                UART_PRINT( "[Telemetry] Connection to the IoT Hub failed, all attempts exhausted." );
+                LogError( ( "Connection to the IoT Hub failed, all attempts exhausted." ) );
             }
             else if( xBackoffAlgStatus == BackoffAlgorithmSuccess )
             {
-                UART_PRINT( "[Telemetry] Connection to the IoT Hub failed [%d]. "
+                LogError( ( "Connection to the IoT Hub failed [%d]. "
                            "Retrying connection with backoff and jitter [%d]ms.",
-                           xNetworkStatus, usNextRetryBackOff );
+                           xNetworkStatus, usNextRetryBackOff ) );
                 vTaskDelay( pdMS_TO_TICKS( usNextRetryBackOff ) );
             }
         }
@@ -424,12 +426,12 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Init(void)
     i2c               = I2C_open(CONFIG_I2C_0, &i2cParams);
     if (i2c == NULL)
     {
-        UART_PRINT("[Telemetry] error Initializing I2C\n\r");
+        LogError( ("error Initializing I2C\n\r") );
         return AWS_IOT_TELEMETRY_ERROR_INIT;
     }
     else
     {
-        UART_PRINT("[Telemetry] I2C Initialized!\n\r");
+        LogInfo( ( ("I2C Initialized!\n\r") ) );
     }
 
     /* Common I2C transaction setup */
@@ -449,14 +451,14 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Init(void)
 
         if (I2C_transfer(i2c, &i2cTransaction))
         {
-            UART_PRINT(   "[Telemetry] Detected %s sensor with target address 0x%x\n\r",
+            LogInfo( (   "Detected %s sensor with target address 0x%x\n\r",
                           sensors[sensorIdx].id,
-                          sensors[sensorIdx].address);
+                          sensors[sensorIdx].address) );
             sensors[sensorIdx].status = true;
         }
         else
         {
-            UART_PRINT("[Telemetry] Failed to detect %s sensor\n\r", sensors[sensorIdx].id);
+            LogError( ("Failed to detect %s sensor\n\r", sensors[sensorIdx].id) );
             sensors[sensorIdx].status = false;
             return AWS_IOT_TELEMETRY_ERROR_INIT;
         }
@@ -468,14 +470,14 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Init(void)
     txBuffer[1] = 0x17;
     if (I2C_transfer(i2c, &i2cTransaction))
     {
-        UART_PRINT(   "[Telemetry] Accelerometer performance mode disabled\n\r");
+        LogInfo( (   "Accelerometer performance mode disabled\n\r") );
     }
 
     txBuffer[0] = BMA456_PWR_CTRL_REG;
     txBuffer[1] = 0x4;
     if (I2C_transfer(i2c, &i2cTransaction))
     {
-        UART_PRINT(   "[Telemetry] Accelerometer mode enabled\n\r");
+        LogInfo( (   "Accelerometer mode enabled\n\r") );
     }
 
     return AWS_IOT_TELEMETRY_SUCCESS;
@@ -507,11 +509,11 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Connect(void)
                                                         &xNetworkCredentials, &xNetworkContext );
     if (ulStatus == 0)
     {
-        UART_PRINT("[Telemetry] AwsIoT Connected to Server successfully.\r\n");
+        LogInfo( ("AwsIoT Connected to Server successfully.\r\n") );
     }
     else
     {
-        UART_PRINT("[Telemetry] AwsIoT Failed to Connect to Server. Status: %d\r\n", ulStatus);
+        LogError( ("AwsIoT Failed to Connect to Server. Status: %d\r\n", ulStatus) );
     }
 
     /* ---- Step 2: MQTT init ---- */
@@ -530,11 +532,11 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Connect(void)
 
     if (xResult == MQTTSuccess)
     {
-        UART_PRINT("[Telemetry] AwsIoTHub Client initialized successfully.\r\n");
+        LogInfo( ("AwsIoTHub Client initialized successfully.\r\n") );
     }
     else
     {
-        UART_PRINT("[Telemetry] AwsIoTHub Failed to Connect to Client. Status: %d\r\n", xResult);
+        LogError( ("AwsIoTHub Failed to Connect to Client. Status: %d\r\n", xResult) );
     }
 
      /* Build the telemetry topic string */
@@ -545,7 +547,7 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Connect(void)
     snprintf(pTopic, sizeof(pTopic), "%s/%s/telemetry",
              AWS_IOT_TELEMETRY_TOPIC_PREFIX, pThingName);
 
-    UART_PRINT("[Telemetry] Topic: %s\r\n", pTopic);	
+    LogInfo( ("Topic: %s\r\n", pTopic) );	
 
     /* ---- Step 3: MQTT CONNECT ---- */
     memset(&connInfo, 0, sizeof(connInfo));
@@ -562,14 +564,14 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Connect(void)
 
     if (xResult != MQTTSuccess)
     {
-        UART_PRINT("[Telemetry] MQTT_Connect failed: %d\r\n", (int)xResult);
+        LogError( ("MQTT_Connect failed: %d\r\n", (int)xResult) );
 	 TLS_Socket_Disconnect( &xNetworkContext );
 	 
         status = AWS_IOT_TELEMETRY_ERROR_CONNECT;
     }
     else
     {
-    	UART_PRINT("[Telemetry] MQTT connected as: %s\r\n", pThingName);
+    	LogInfo( ("MQTT connected as: %s\r\n", pThingName) );
 		
     	status = AWS_IOT_TELEMETRY_SUCCESS;
     }
@@ -638,11 +640,11 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 temperature = (rxBuffer[0]);
 
                 sprintf(tempStr, "%d", temperature);
-                UART_PRINT("[Telemetry] temperature is %s degC\n\r", tempStr);
+                LogInfo( ("temperature is %s degC\n\r", tempStr) );
             }
             else
             {
-                UART_PRINT("[Telemetry] failed to read temperature sensor\n\r");
+                LogError( ("failed to read temperature sensor\n\r") );
             }
         }
 
@@ -657,11 +659,11 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 accXYZ = (rxBuffer[0]);
 
                 sprintf(accXStr, "%d", accXYZ);
-                UART_PRINT("[Telemetry] accelerometer X axis is %s\n\r", accXStr);
+                LogInfo( ("accelerometer X axis is %s\n\r", accXStr) );
             }
             else
             {
-                UART_PRINT("[Telemetry] failed to read accelerometer sensor\n\r");
+                LogError( ("failed to read accelerometer sensor\n\r") );
             }
 
             txBuffer[0] = BMA456_ACC_Y_REG;
@@ -670,11 +672,11 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 accXYZ = (rxBuffer[0]);
 
                 sprintf(accYStr, "%d", accXYZ);
-                UART_PRINT("[Telemetry] accelerometer Y axis is %s\n\r", accYStr);
+                LogInfo( ("accelerometer Y axis is %s\n\r", accYStr) );
             }
             else
             {
-                UART_PRINT("[Telemetry] failed to read accelerometer sensor\n\r");
+                LogError( ("failed to read accelerometer sensor\n\r") );
             }
 
             txBuffer[0] = BMA456_ACC_Z_REG;
@@ -683,11 +685,11 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
                 accXYZ = (rxBuffer[0]);
 
                 sprintf(accZStr, "%d", accXYZ);
-                UART_PRINT("[Telemetry] accelerometer Z axis is %s\n\r", accZStr);
+                LogInfo( ("accelerometer Z axis is %s\n\r", accZStr) );
             }
             else
             {
-                 UART_PRINT("[Telemetry] failed to read accelerometer sensor\n\r");
+                 LogError( ("failed to read accelerometer sensor\n\r") );
             }
         }
 
@@ -740,11 +742,11 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
 
         if (pubRet != MQTTSuccess)
         {
-            UART_PRINT("[Telemetry] MQTT_Publish failed: %d\r\n", (int)pubRet);
+            LogError( ("MQTT_Publish failed: %d\r\n", (int)pubRet) );
             return AWS_IOT_TELEMETRY_ERROR_PUBLISH;
         }
 
-        UART_PRINT("[Telemetry] Published: %s, s_packetId %d\r\n", jsonBuf, s_packetId);
+        LogInfo( ("Published: %s, s_packetId %d\r\n", jsonBuf, s_packetId) );
 
         /* ---- Wait for next publish period ---- */
         /* Drive MQTT_ProcessLoop every ~100 ms to service PINGRESPs and PUBACKs.
@@ -765,14 +767,14 @@ AwsIotTelemetryStatus_t AwsIotTelemetry_Run(void)
             MQTTStatus_t loopRet = MQTT_ProcessLoop(&mqttContext);
             if (loopRet != MQTTSuccess)
             {
-                UART_PRINT("[Telemetry] MQTT_ProcessLoop error: %d\r\n", (int)loopRet);
+                LogError( ("MQTT_ProcessLoop error: %d\r\n", (int)loopRet) );
                 return AWS_IOT_TELEMETRY_ERROR_PUBLISH;
             }
 
             /* Check if the publish callback (OTA handler) signalled a pending job */
             if (AwsIotOta_IsUpdatePending())
             {
-                UART_PRINT("[Telemetry] OTA job pending — signal to OTA thread\r\n");
+                LogInfo( ("OTA job pending — signal to OTA thread\r\n") );
                 AwsIotOta_Signal();
             }	
         }

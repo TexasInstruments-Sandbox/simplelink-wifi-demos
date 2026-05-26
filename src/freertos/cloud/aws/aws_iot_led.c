@@ -36,6 +36,8 @@
 /* UART terminal */
 #include "uart_term.h"
 
+#define LIBRARY_LOG_NAME    "LEDS"
+
 /* --------------------------------------------------------------------------
  * Compile-time configuration
  * --------------------------------------------------------------------------*/
@@ -91,19 +93,19 @@ static char * s_apply_led_command(const char *pVal, size_t valLen, uint8_t ledId
     if (valLen == 2u && strncmp(pVal, "on", 2) == 0)
     {
         LED_IF_set(ledIdx, 100);
-        UART_PRINT("[LED] LED turned ON\r\n");
+        LogInfo( ("LED turned ON\r\n") );
         return "on";
     }
     else if (valLen == 3u && strncmp(pVal, "off", 3) == 0)
     {
         LED_IF_set(ledIdx, 0);
-        UART_PRINT("[LED] LED turned OFF\r\n");
+        LogInfo( ("LED turned OFF\r\n") );
         return "off";
     }
     else
     {
-        UART_PRINT("[LED] Unknown LED command value (len=%u)\r\n",
-                   (unsigned)valLen);
+        LogError( ("Unknown LED command value (len=%u)\r\n",
+                   (unsigned)valLen) );
         return "N/A";
     }
 }
@@ -118,14 +120,14 @@ int AwsIotLed_Init(MQTTContext_t *pMqttCtx)
 
     if (pMqttCtx == NULL)
     {
-        UART_PRINT("[LED] Init failed: NULL MQTT context\r\n");
+        LogError( ("Init failed: NULL MQTT context\r\n") );
         return -1;
     }
 
     thingName = AwsIot_GetThingName();
     if (thingName == NULL || thingName[0] == '\0')
     {
-        UART_PRINT("[LED] Init failed: thing name unavailable\r\n");
+        LogError( ("Init failed: thing name unavailable\r\n") );
         return -1;
     }
 
@@ -146,7 +148,7 @@ int AwsIotLed_Init(MQTTContext_t *pMqttCtx)
     snprintf(s_topicGet, sizeof(s_topicGet),
              "$aws/things/%s/shadow/get", s_thingName);
 
-    UART_PRINT("[LED] Initialised for thing: %s\r\n", s_thingName);
+    LogInfo( ("Initialised for thing: %s\r\n", s_thingName) );
     return 0;
 }
 
@@ -157,7 +159,7 @@ int AwsIotLed_Subscribe(void)
 
     if (s_mqttCtx == NULL)
     {
-        UART_PRINT("[LED] Subscribe failed: not initialised\r\n");
+        LogError( ("Subscribe failed: not initialised\r\n") );
         return -1;
     }
 
@@ -174,14 +176,14 @@ int AwsIotLed_Subscribe(void)
     ret = MQTT_Subscribe(s_mqttCtx, subs, 2u, next_packet_id());
     if (ret != MQTTSuccess)
     {
-        UART_PRINT("[LED] MQTT_Subscribe failed: %d\r\n", (int)ret);
+        LogError( ("MQTT_Subscribe failed: %d\r\n", (int)ret) );
         return -1;
     }
 
     /* Drive the process loop once to receive the SUBACK */
     MQTT_ProcessLoop(s_mqttCtx);
 
-    UART_PRINT("[LED] Subscribed to shadow topics\r\n");
+    LogInfo( ("Subscribed to shadow topics\r\n") );
     return 0;
 }
 
@@ -202,7 +204,7 @@ void AwsIotLed_RequestCurrentState(void)
     pub.payloadLength   = 2u;
 
     MQTT_Publish(s_mqttCtx, &pub, 0U);
-    UART_PRINT("[LED] Requested current shadow state\r\n");
+    LogInfo( ("Requested current shadow state\r\n") );
 }
 
 void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
@@ -241,7 +243,7 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
 
     if (isDelta)
     {
-        UART_PRINT("[LED] is_delta payload %s, payload_len %d\n\r", pPublish->pPayload, pPublish->payloadLength);
+        LogInfo( ("is_delta payload %s, payload_len %d\n\r", pPublish->pPayload, pPublish->payloadLength) );
         /* Delta payload: {"version":N,"state":{"green_led":"on/off","blue_led":"on/off","red_led":"on/off"},...}
          * Key path within the JSON document: e.g. "state.green_led" */
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -250,13 +252,13 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                                 &pVal, &valLen, NULL);
         if (jret == JSONSuccess)
         {
-            UART_PRINT("[LED] Shadow delta received: green_led=%.*s\r\n",
-                       (int)valLen, pVal);
+            LogInfo( ("Shadow delta received: green_led=%.*s\r\n",
+                       (int)valLen, pVal) );
             strcpy(ledStates[CONFIG_LED_GREEN], s_apply_led_command(pVal, valLen, CONFIG_LED_GREEN));
         }
         else
         {
-            UART_PRINT("[LED] Shadow delta with green_led not received, keep previous\n\r");
+            LogInfo( ("Shadow delta with green_led not received, keep previous\n\r") );
         }
         
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -265,13 +267,13 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                                 &pVal, &valLen, NULL);
         if (jret == JSONSuccess)
         {
-            UART_PRINT("[LED] Shadow delta received: blue_led=%.*s\r\n",
-                       (int)valLen, pVal);
+            LogInfo( ("Shadow delta received: blue_led=%.*s\r\n",
+                       (int)valLen, pVal) );
             strcpy(ledStates[CONFIG_LED_BLUE], s_apply_led_command(pVal, valLen, CONFIG_LED_BLUE));
         }
         else
         {
-            UART_PRINT("[LED] Shadow delta with green_led not received, keep previous\n\r");
+            LogInfo( ("Shadow delta with green_led not received, keep previous\n\r") );
         }
 
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -280,20 +282,20 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                                 &pVal, &valLen, NULL);
         if (jret == JSONSuccess)
         {
-            UART_PRINT("[LED] Shadow delta received: red_led=%.*s\r\n",
-                       (int)valLen, pVal);
+            LogInfo( ("Shadow delta received: red_led=%.*s\r\n",
+                       (int)valLen, pVal) );
             strcpy(ledStates[CONFIG_LED_RED], s_apply_led_command(pVal, valLen, CONFIG_LED_RED));
         }
         else
         {
-            UART_PRINT("[LED] Shadow delta with green_led not received, keep previous\n\r");
+            LogInfo( ("Shadow delta with green_led not received, keep previous\n\r") );
         }
 
-        UART_PRINT("[LED] Shadow delta received: green_led=%s, blue_led=%s, red_led=%s\r\n", ledStates[CONFIG_LED_GREEN], ledStates[CONFIG_LED_BLUE], ledStates[CONFIG_LED_RED]);
+        LogInfo( ("Shadow delta received: green_led=%s, blue_led=%s, red_led=%s\r\n", ledStates[CONFIG_LED_GREEN], ledStates[CONFIG_LED_BLUE], ledStates[CONFIG_LED_RED]) );
     }
     else /* isGetAccepted */
     {
-        UART_PRINT("[LED] isGetAccepted payload %s, payload_len %d\n\r", pPublish->pPayload, pPublish->payloadLength);
+        LogInfo( ("isGetAccepted payload %s, payload_len %d\n\r", pPublish->pPayload, pPublish->payloadLength) );
         /* Get/accepted payload: full shadow document.
          * Key path for the desired LED state: e.g. "state.desired.green_led" */
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -302,13 +304,13 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                                 &pVal, &valLen, NULL);
         if (jret == JSONSuccess)
         {
-            UART_PRINT("[LED] Shadow get/accepted: desired green_led=%.*s\r\n",
-                       (int)valLen, pVal);
+            LogInfo( ("Shadow get/accepted: desired green_led=%.*s\r\n",
+                       (int)valLen, pVal) );
             strcpy(ledStates[CONFIG_LED_GREEN], s_apply_led_command(pVal, valLen, CONFIG_LED_GREEN));
         }
         else
         {
-            UART_PRINT("[LED] Shadow get/accepted: no desired.green_led — LED unchanged\r\n");
+            LogInfo( ("Shadow get/accepted: no desired.green_led — LED unchanged\r\n") );
         }
 
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -317,13 +319,13 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                                 &pVal, &valLen, NULL);
         if (jret == JSONSuccess)
         {
-            UART_PRINT("[LED] Shadow get/accepted: desired blue_led=%.*s\r\n",
-                       (int)valLen, pVal);
+            LogInfo( ("Shadow get/accepted: desired blue_led=%.*s\r\n",
+                       (int)valLen, pVal) );
             strcpy(ledStates[CONFIG_LED_BLUE], s_apply_led_command(pVal, valLen, CONFIG_LED_BLUE));
         }
         else
         {
-            UART_PRINT("[LED] Shadow get/accepted: no desired.blue_led — LED unchanged\r\n");
+            LogInfo( ("Shadow get/accepted: no desired.blue_led — LED unchanged\r\n") );
         }
 
         jret = JSON_SearchConst((const char *)pPublish->pPayload,
@@ -332,16 +334,16 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
                                 &pVal, &valLen, NULL);
         if (jret == JSONSuccess)
         {
-            UART_PRINT("[LED] Shadow get/accepted: desired red_led=%.*s\r\n",
-                       (int)valLen, pVal);
+            LogInfo( ("Shadow get/accepted: desired red_led=%.*s\r\n",
+                       (int)valLen, pVal) );
             strcpy(ledStates[CONFIG_LED_RED], s_apply_led_command(pVal, valLen, CONFIG_LED_RED));
         }
         else
         {
-            UART_PRINT("[LED] Shadow get/accepted: no desired.red_led — LED unchanged\r\n");
+            LogInfo( ("Shadow get/accepted: no desired.red_led — LED unchanged\r\n") );
         }
 
-        UART_PRINT("[LED] Shadow get_accepted received: green_led=%s, blue_led=%s, red_led=%s\r\n", ledStates[CONFIG_LED_GREEN], ledStates[CONFIG_LED_BLUE], ledStates[CONFIG_LED_RED]);
+        LogInfo( ("Shadow get_accepted received: green_led=%s, blue_led=%s, red_led=%s\r\n", ledStates[CONFIG_LED_GREEN], ledStates[CONFIG_LED_BLUE], ledStates[CONFIG_LED_RED]) );
     }
 
     /* Publish reported state so the shadow document stays synchronised */
@@ -359,10 +361,10 @@ void AwsIotLed_OnMqttPublish(MQTTPublishInfo_t *pPublish)
     MQTTStatus_t ret = MQTT_Publish(s_mqttCtx, &pub, 0U);
     if (ret != MQTTSuccess)
     {
-        UART_PRINT("[LED] Failed to publish reported state: %d\r\n", (int)ret);
+        LogError( ("Failed to publish reported state: %d\r\n", (int)ret) );
     }
     else
     {
-        UART_PRINT("[LED] Successfully published to topic %s, with payload %s\r\n", s_topicUpdate, reportedPayload);
+        LogInfo( ("Successfully published to topic %s, with payload %s\r\n", s_topicUpdate, reportedPayload) );
     }
 }
