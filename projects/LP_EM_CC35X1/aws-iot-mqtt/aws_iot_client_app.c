@@ -322,13 +322,16 @@ void prvAwsDemoTask( void * pvParameters )
                 UART_PRINT("[Main] Connected. Publishing every %u ms.\r\n",
                         (unsigned)AWS_IOT_TELEMETRY_PERIOD_MS);
 
-		  /* OTA initialisation — shares the telemetry MQTT connection */
+                /* Route all incoming PUBLISHes through the shared dispatcher */
+                AwsIotTelemetry_RegisterPublishCallback(s_mqtt_dispatch);
+
+		        /* OTA initialisation — shares the telemetry MQTT connection */
                 if (AwsIotOta_Init(AwsIotTelemetry_GetMqttCtx()) == 0)
-	         {
-	             AwsIotOta_HandleTrialState();   /* accept/reject TRIAL firmware */
-	             AwsIotOta_Subscribe();          /* subscribe to Jobs notification topics */
-	             AwsIotOta_CheckForUpdate();     /* poll for any job pending before boot */
-	         }
+	            {
+                    AwsIotOta_HandleTrialState();   /* accept/reject TRIAL firmware */
+                    AwsIotOta_Subscribe();          /* subscribe to Jobs notification topics */
+                    AwsIotOta_CheckForUpdate();     /* poll for any job pending before boot */
+	            }
 
                 /* LED shadow control â€” shares the telemetry MQTT connection */
                 if (AwsIotLed_Init(AwsIotTelemetry_GetMqttCtx()) == 0)
@@ -336,9 +339,6 @@ void prvAwsDemoTask( void * pvParameters )
                     AwsIotLed_Subscribe();
                     AwsIotLed_RequestCurrentState();
                 }
-
-		        /* Route all incoming PUBLISHes through the shared dispatcher */
-                AwsIotTelemetry_RegisterPublishCallback(s_mqtt_dispatch);
 
                 /* Register the tick callback so SW1/SW2 are serviced every ~100 ms
                 * even while the telemetry loop is blocking. */

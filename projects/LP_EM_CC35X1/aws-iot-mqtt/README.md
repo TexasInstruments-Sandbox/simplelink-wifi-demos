@@ -665,16 +665,47 @@ $aws/things/{thingName}/jobs/{jobId}/update
 $aws/things/{thingName}/jobs/{jobId}/update/accepted
 ```
 
-**Typical OTA Flow:**
+**OTA Flow 1: Polling (On Startup)**
 
-1. Device receives notification on `notify-next`
-2. Device requests job details via `$next/get`
-3. AWS responds on `$next/get/accepted` with firmware URL and metadata
-4. Device downloads firmware from pre-signed S3 URL (separate HTTPS connection)
-5. Device writes firmware to secondary flash slot (PSA FWU)
-6. Device publishes job status update to `jobs/{jobId}/update`
-7. AWS confirms on `jobs/{jobId}/update/accepted`
-8. Device reboots with new firmware
+Device checks for pending jobs immediately after connecting to AWS:
+
+1. Device publishes (empty) request to `$aws/things/{thingName}/jobs/$next/get`
+2. AWS responds on `$aws/things/{thingName}/jobs/$next/get/accepted` with:
+   - Full job document (if job exists)
+   - Empty response (if no jobs pending)
+3. If job exists:
+   - Device downloads firmware from pre-signed S3 URL (separate HTTPS connection)
+   - Device writes firmware to secondary flash slot (PSA FWU)
+   - Device publishes job status update to `$aws/things/{thingName}/jobs/{jobId}/update`
+   - AWS confirms on `$aws/things/{thingName}/jobs/{jobId}/update/accepted`
+   - Device reboots with new firmware
+
+**OTA Flow 2: Push Notification (While Running)**
+
+AWS proactively sends job notification when new job becomes available:
+
+1. Device subscribes to `$aws/things/{thingName}/jobs/notify-next` (at startup)
+2. While device is running, AWS publishes job notification to `notify-next` with:
+   - Full job document
+   - Execution details
+3. Device receives notification and:
+   - Downloads firmware from pre-signed S3 URL (separate HTTPS connection)
+   - Writes firmware to secondary flash slot (PSA FWU)
+   - Publishes job status update to `$aws/things/{thingName}/jobs/{jobId}/update`
+   - AWS confirms on `$aws/things/{thingName}/jobs/{jobId}/update/accepted`
+   - Device reboots with new firmware
+
+**Key Differences:**
+
+| Aspect | Flow 1 (Polling) | Flow 2 (Push) |
+|--------|-----------------|--------------|
+| **Triggered by** | Device (on startup) | AWS (when job available) |
+| **Responsiveness** | Periodic check (only at startup or intervals) | Real-time (immediate notification) |
+| **Payload** | Empty request, full response | Full job document in notification |
+| **Use case** | Startup check, periodic polling | Continuous monitoring for new jobs |
+| **Subscription** | Not needed for polling | Required for receiving pushes |
+
+Both flows are supported by the device code—it handles jobs from either topic.
 
 ---
 
@@ -775,11 +806,24 @@ Certificates must be provisioned into the CC3551's non-volatile memory (NVOCMP):
      ```
    - Click **Publish**
 
+6. **Test OTA Job Creation:**
+   - Go to **Manage** → **Things** → **DevMac_AABBCCDDEEFF** → **Jobs**
+   - Click **Create job**
+   - Choose **"Create a custom job"** (or **"Create OTA update job"** if available)
+   - Upload your firmware binary (or choose file from S3)
+   - Skip "Sign a new file" for testing (not required for development)
+   - Create the job and deploy to device
+   - Subscribe to job topics to monitor:
+     - `$aws/things/DevMac_AABBCCDDEEFF/jobs/notify-next` (job notifications)
+     - `$aws/things/DevMac_AABBCCDDEEFF/jobs/$next/get/accepted` (job details)
+   - Watch device download firmware and reboot
+
 **Advantages:**
 - No external tools needed
 - Real-time message viewing
 - No certificate file management
 - Visual shadow editor
+- Easy job creation and monitoring
 
 ---
 
@@ -850,9 +894,11 @@ mosquitto_pub \
 
 ### Recommended Testing Flow
 
-1. **Quick shadow control** → Use AWS Console Test or AWS CLI
-2. **Monitor telemetry** → Use AWS Console Test (subscribe to `AwsTI/DevMac_*/telemetry`)
-3. **Advanced MQTT testing** → Use mosquitto_pub/mosquitto_sub
+1. **Verify connectivity** → Check telemetry publishing (subscribe to `AwsTI/DevMac_*/telemetry`)
+2. **Test remote control** → Use AWS Console Test to control LEDs via Device Shadow
+3. **Test OTA update** → Create a job in AWS Console, upload firmware, deploy to device
+4. **Monitor OTA progress** → Subscribe to job topics and watch device download + reboot
+5. **Advanced MQTT testing** → Use mosquitto_pub/mosquitto_sub for low-level protocol testing
 
 ---
 
@@ -885,6 +931,362 @@ mosquitto_pub \
 
 ---
 
+## AWS IoT Jobs: Full OTA Firmware Update Process
+
+This section describes the complete end-to-end process for deploying firmware updates to CC3551 devices using AWS IoT Jobs and S3 storage.
+
+### Context
+
+The flash used in the LP-EM-CC35X1 is IS25WJ064F (8 MB) and `Mem_cfg.ota = true` is now
+active — dual A/B slots are provisioned and the device is ready for OTA.  AWS IoT Jobs is the right mechanism to be used with AWS OTA concept: it provides
+job dispatch and status tracking over MQTT without requiring AWS code signing. The
+device already has a coreMQTT MQTT connection for telemetry and can reuse it for job
+notifications. Firmware binaries are stored in S3 and downloaded directly via HTTPS
+presigned URL.
+
+The CC35X1 supports OTA for three independent component pairs, each with a
+primary and secondary (target) slot:
+
+| Component    | Slot 1 ID | Slot 2 ID | Flash Size (IS25WJ064F, 8 MB) |
+|--------------|-----------|-----------|-------------------------------|
+| BL2          | 0         | 1         | 408 KB each (0x00066000)      |
+| Wireless_FW  | 2         | 3         | 456 KB each (0x00072000)      |
+| Vendor_Image | 4         | 5         | ~2.63 MB each (0x002A2000)    |
+
+**A single OTA job can update any subset of 1–3 components** (or all three at
+once). All component types use the same PSA FWU API — no special per-component
+code paths are needed in the application layer. BL2 and Wireless_FW secondary
+slots are always provisioned by the bootloader in flash; Vendor_Image_Slot_2
+requires `Mem_cfg.ota = true` in SysConfig — already enabled (see Step 1).
+
+---
+
+### Architecture
+
+```
+AWS Console
+  └─ Create IoT Job (job doc: {components: [{type, slot1_id, slot2_id, url, version, size}, ...]})
+        │
+        │  MQTT $aws/things/{name}/jobs/notify-next
+        ▼
+Device (existing MQTT connection)
+  ├─ Receive job notification → parse components[] array
+  │
+  ├─ For each component in job (1–3 entries):
+  │    ├─ OTA_FWU_selectTargetSlot(slot1_id, slot2_id, &targetSlot)
+  │    ├─ OTA_FWU_prepareSlot(targetSlot)         → READY
+  │    ├─ ota_https_download() → stream → PSA FWU write
+  │    └─ psa_fwu_finish(targetSlot)               → CANDIDATE
+  │
+  ├─ psa_fwu_install()    (stages all CANDIDATEs at once)  → STAGED
+  ├─ Update job status → SUCCEEDED
+  └─ psa_fwu_request_reboot()
+
+On next boot:
+  Bootloader validates all STAGED slots → each valid component → TRIAL
+  App: WiFi connects (self-test) → psa_fwu_accept() → all TRIALs → UPDATED
+       (or psa_fwu_reject() → rollback all, reboot to previous firmware)
+```
+
+---
+
+### Overview
+
+OTA updates flow through these stages:
+1. **S3 Bucket Setup** — Store firmware binaries securely
+2. **Firmware Upload** — Place binary in S3
+3. **Pre-signed URL Generation** — Create temporary access link
+4. **Job Creation** — Define update task with firmware details
+5. **Job Deployment** — Push to device via MQTT
+6. **Device Download** — Device fetches firmware over HTTPS
+7. **Installation** — PSA FWU writes to secondary slot
+8. **Reboot & Verification** — Device switches to new firmware
+
+---
+
+### AWS Console Setup
+
+#### Create an S3 Bucket
+
+**Purpose:** Store firmware binaries and job documents securely.
+
+**Steps:**
+
+1. Go to **Amazon S3 Console** (https://s3.console.aws.amazon.com)
+2. Click **Create bucket**
+3. **Bucket name:** Enter a unique name (e.g., `osprey-ota-firmware`)
+   - Must be globally unique across all AWS accounts
+   - Use lowercase letters, numbers, hyphens only
+   - No underscores or dots
+4. **Region:** Select same region as IoT Core (e.g., `us-east-1`)
+5. **Block Public Access:** Keep all checkboxes **checked** (don't make public)
+6. Click **Create bucket**
+
+**Verify bucket was created:**
+- You should see it listed in the S3 console
+- Note the bucket name for later steps
+
+**Optional: Bucket Versioning (Recommended)**
+
+For safety, enable versioning to keep old firmware versions:
+
+1. Click your bucket name
+2. Go to **Properties** tab
+3. Scroll to **Versioning**
+4. Click **Edit**
+5. Select **Enable versioning**
+6. Click **Save changes**
+
+This allows you to recover previous firmware versions if needed.
+
+---
+
+### Upload a Firmware Binary
+
+#### Prepare the Binaries
+
+Build the firmware in CCS (with OTA enabled in SysConfig). Upon a successful compilation, a .out file is created under `Debug/<app_name>.out`. The output signed binary that needs to be eventually uploaded to AWS S3, is created under `Debug/toolbox/primary_vendor_image.sign.bin` — this file already has
+the 48-byte TI PSA FWU manifest prepended by the build system. The version for the vendor application can be modified in the \*.syscfg under the **Actions Requested** option, in **Primary Vendor Image Version**.
+
+Recommended file naming convention:
+
+| Component | Filename pattern | Source |
+|-----------|-----------------|--------|
+| Vendor_Image | `vendor_vMAJOR.MINOR.REVISION.BUILD.bin` | CCS Debug output |
+| BL2 | `bl2_vMAJOR.MINOR.PATCH.bin` | TI SDK build |
+| Wireless_FW | `wsoc_fw_vMAJOR.MINOR.PATCH.bin` | TI SDK build |
+
+#### Upload to S3
+
+**Steps:**
+
+1. Go to your S3 bucket (S3 Console → Buckets → your bucket name)
+2. Click **Upload**
+3. **Add files:** Click **Add files** and select your firmware binary
+   - Example: `vendor_image_aws_0.1.0.1.sign.bin` (your signed binary)
+4. **Storage class:** Leave as default (Standard)
+5. **Permissions:** Leave as default (private)
+6. Click **Upload**
+
+**Verify upload:**
+- After upload completes, you should see the file listed in the bucket
+- Click the file to view details (object URL, size, last modified date)
+- **Copy the object URL** for generating the pre-signed URL later
+
+**File Naming Best Practice:**
+
+Use semantic versioning in filename:
+```
+vendor_image_{project}_{version}_{timestamp}.bin
+vendor_image_aws_0.1.0.1.bin          ← Good
+vendor_image_aws_0.1.0.1.sign.bin     ← Good (if signed on your side)
+vendor.bin                            ← Too generic
+```
+
+**File Size Considerations:**
+
+- Device must have enough secondary flash slot for firmware
+- Larger files require more download time
+
+---
+
+### Generate a Presigned URL for the Binary
+
+**Purpose:** Create a temporary, secure HTTPS link that the device can use to download the firmware without AWS credentials.
+
+#### Via S3 Console
+
+1. Go to your S3 bucket
+2. Click the firmware file you uploaded
+3. Look for **"Share"** or **"Generate presigned URL"** button/link
+   - (Location varies by AWS Console version)
+4. **Expiration time:** Set to appropriate duration
+   - Recommended: 24 hours (`86400` seconds) for testing
+   - Use 1-7 days for production depending on deployment window
+5. Click **Generate presigned URL**
+6. **Copy the full URL** (includes all `X-Amz-*` parameters)
+
+**Example presigned URL:**
+```
+https://osprey-ota-firmware.s3.us-east-1.amazonaws.com/vendor_image_aws_0.1.0.1.sign.bin?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20260524%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260524T120621Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=abcd1234...
+```
+
+**URL Structure:**
+- Base: `https://{bucket}.s3.{region}.amazonaws.com/{file}`
+- Query string: Authentication parameters (Algorithm, Credential, Date, Expires, Signature)
+- **Important:** Full URL must be copied including all query parameters
+
+#### Via AWS CLI (if available)
+
+```bash
+aws s3 presign s3://osprey-ota-firmware/vendor_image_aws_0.1.0.1.sign.bin \
+  --expires-in 86400 \
+  --region us-east-1
+```
+
+**Expiration Considerations:**
+
+| Duration | Use Case | Example |
+|----------|----------|---------|
+| 1 hour (3600s) | Immediate deployment, single device | Quick testing |
+| 24 hours (86400s) | Multi-device rollout in one day | Typical deployment |
+| 7 days (604800s) | Staggered rollout, retry tolerance | Production deployment |
+
+**Important:** URL becomes invalid after expiration time. Plan accordingly or regenerate as needed.
+
+---
+
+### Create an IoT Job
+
+#### Create Job Document (JSON)
+
+The job document defines what firmware to install. Create a JSON file with this structure:
+
+**File: `job-document.json`**
+
+```json
+{
+  "components": [
+    {
+      "type": "Vendor_Image",
+      "slot1_id": 4,
+      "slot2_id": 5,
+      "version": "0.1.0.1",
+      "url": "https://osprey-ota-firmware.s3.us-east-1.amazonaws.com/vendor_image_aws_0.1.0.1.sign.bin?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...",
+      "size": 1220692
+    }
+  ]
+}
+```
+
+**Field Descriptions:**
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `type` | Firmware component type | `"Vendor_Image"` (also: `"BL2"`, `"Wireless_FW"`) |
+| `slot1_id` | Primary flash slot ID | `4` (slot IDs: 0, 2, 4 for primary; 1, 3, 5 for secondary) |
+| `slot2_id` | Secondary flash slot ID (target for update) | `5` |
+| `version` | Firmware version string | `"0.1.0.1"` (format: `MAJOR.MINOR.PATCH.BUILD`) |
+| `url` | **Full** pre-signed HTTPS URL to firmware | Entire URL with `?X-Amz-*` parameters |
+| `size` | File size in bytes | `1220692` |
+
+**Getting File Size:**
+
+```bash
+# Linux/macOS
+ls -la vendor_image_aws_0.1.0.1.sign.bin
+# Output: ... 1220692 May 24 12:06 vendor_image_aws_0.1.0.1.sign.bin
+
+# Windows
+dir vendor_image_aws_0.1.0.1.sign.bin
+# Output shows file size in bytes
+```
+
+**Important Notes:**
+
+- **URL must be complete** including all `?X-Amz-*` query parameters
+- **URL buffer in device code is 2560 bytes** to accommodate long pre-signed URLs
+- **Do NOT include `execution` wrapper** — AWS adds that automatically
+- **Slot IDs are fixed** for your hardware (check PSA FWU configuration)
+
+#### Upload Job Document to S3
+
+1. Go to S3 bucket
+2. Click **Upload**
+3. Select `job-document.json` (the file you created above)
+4. Click **Upload**
+
+**Verify:** File appears in bucket listing
+
+---
+
+#### Deploy Job via AWS IoT Console
+
+**Steps:**
+
+1. Go to **AWS IoT Console** (https://console.aws.amazon.com/iot)
+2. Left sidebar → **Manage** → **Jobs**
+3. Click **Create job**
+4. Choose **"Create a custom job"** (not "Create FreeRTOS OTA update job")
+   - FreeRTOS option requires code signing and file paths (not applicable for embedded)
+
+**Configure Job:**
+
+5. **Job ID:** Enter a descriptive name
+   - Example: `ota-vendor-v0.1.0.1-20260524`
+   - Pattern: `ota-{component}-v{version}-{date}`
+
+6. **Job document:**
+   - Select **"Upload a custom job document"**
+   - Click **"Browse S3"** or **"Upload a new file"**
+   - Navigate to your `job-document.json` in S3 bucket
+   - Click **Select**
+
+7. **Job targets:**
+   - Click **"Add targets"**
+   - Select **"Things"**
+   - Check your device Thing name (e.g., `DevMac_AABBCCDDEEFF`)
+   - Click **"Add targets"**
+
+8. **Job type:** Leave as default
+   - For OTA: Typically **"Snapshot"** or **"Continuous"**
+   - Recommended: **"Snapshot"** (one-time job)
+
+9. **Advanced options:** Leave defaults
+   - Rollout rate, abort config, timeout settings
+   - Can be customized for large deployments
+
+10. Click **"Create"** or **"Create and deploy"**
+
+**Monitor Job Deployment:**
+
+After job creation:
+1. Job appears in the Jobs list
+2. Click job name to see details
+3. **Job execution details** tab shows target device(s) and status:
+   - `QUEUED` — Device hasn't received job yet
+   - `IN_PROGRESS` — Device is downloading/installing
+   - `SUCCEEDED` — Installation complete, reboot pending
+   - `FAILED` — Error occurred
+
+**Check Device Execution Status:**
+
+In the job details, click **"Job executions"** tab to see per-device status:
+- Device name
+- Status (QUEUED, IN_PROGRESS, SUCCEEDED, FAILED)
+- Timestamps (received, started, finished)
+- Error details (if failed)
+
+**Monitor Device Logs:**
+
+In device serial output, you should see:
+```
+[OTA] Job notification received (XXX bytes)
+[OTA] Job parsed: 1 component(s) pending
+[OTA-HTTPS] Starting download from: https://...
+[OTA-HTTPS] TLS connection established
+[OTA-HTTPS] HTTP response status: 200
+[OTA-HTTPS] Downloaded 1220692 / 1220692 bytes
+[OTA] Job {jobId} status: IN_PROGRESS
+[OTA] Component installed. Rebooting...
+[OTA] Job {jobId} status: SUCCEEDED
+```
+
+---
+
+#### Troubleshooting Job Deployment
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| **Job stuck in QUEUED** | Device not receiving job | Check MQTT connection, subscription to job topics |
+| **HTTP 403 Forbidden** | Pre-signed URL expired or invalid | Regenerate new presigned URL, update job document |
+| **HTTP 404 Not Found** | File doesn't exist in S3 | Verify file uploaded to bucket, check filename in URL |
+| **Device parse error** | Job document format incorrect | Verify JSON structure, no `execution` wrapper |
+| **FWU write failed** | Secondary slot corrupted or no space | Check slot state, verify file size fits |
+| **Connection timeout** | Network unstable during download | Increase timeout, check Wi-Fi signal |
+
+---
+
 ## Troubleshooting
 
 | Problem | Cause | Solution |
@@ -895,15 +1297,6 @@ mosquitto_pub \
 | **MQTT timeout** | Network delay or firewall blocking port 8883 | Use `mosquitto_pub` to test connectivity |
 | **Device doesn't receive shadow updates** | Not subscribed to delta topic | Call `AwsIotLed_Subscribe()` |
 
----
-
-## Next Steps
-
-1. **Set up AWS IoT Core** following the steps in Section 2
-2. **Provision device certificate** onto CC3551
-3. **Compile and flash** the AWS example code
-4. **Monitor telemetry** in AWS IoT Console Test tab
-5. **Control LED** via Device Shadow updates
 
 ---
 

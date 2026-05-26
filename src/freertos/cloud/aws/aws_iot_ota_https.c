@@ -61,7 +61,7 @@ typedef struct NetworkContext
 #define OTA_HTTPS_SEND_TIMEOUT_MS    30000U
 
 /** @brief Max URL size. */
-#define OTA_HTTPS_MAX_URL_SIZE       512U
+#define OTA_HTTPS_MAX_URL_SIZE       2560U
 
 /* --------------------------------------------------------------------------
  * Module-level static buffers
@@ -217,13 +217,6 @@ int ota_https_download(const ota_https_req_t *pReq, uint32_t *pBytesReceived)
     requestHeaders.pBuffer = s_httpBuffer;
     requestHeaders.bufferLen = sizeof(s_httpBuffer);
 
-    httpStatus = HTTPClient_InitializeRequestHeaders(&requestHeaders, NULL);
-    if (httpStatus != HTTPSuccess)
-    {
-        UART_PRINT("[OTA-HTTPS] HTTPClient_InitializeRequestHeaders failed: %d\r\n", httpStatus);
-        goto cleanup;
-    }
-
     /* -------- Set up HTTP GET request -------- */
     memset(&requestInfo, 0, sizeof(requestInfo));
     requestInfo.pMethod = HTTP_METHOD_GET;
@@ -244,6 +237,7 @@ int ota_https_download(const ota_https_req_t *pReq, uint32_t *pBytesReceived)
     UART_PRINT("[OTA-HTTPS] HTTP GET %s%s\r\n", host, path);
 
     /* -------- Send HTTP GET and receive response headers -------- */
+    memset(&response, 0, sizeof(response));
     response.pBuffer = s_httpBuffer;
     response.bufferLen = sizeof(s_httpBuffer);
     response.statusCode = 0;

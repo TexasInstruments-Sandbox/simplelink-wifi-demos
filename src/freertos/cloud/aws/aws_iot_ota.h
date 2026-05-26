@@ -57,7 +57,7 @@ typedef struct
     uint8_t  slot1_id;    /**< Primary slot component ID (0, 2, or 4). */
     uint8_t  slot2_id;    /**< Secondary slot component ID (1, 3, or 5). */
     char     version[16]; /**< Version string "MAJOR.MINOR.PATCH.BUILD". */
-    char     url[512];    /**< Full S3 presigned HTTPS URL. */
+    char     url[2560];    /**< Full S3 presigned HTTPS URL. */
     uint32_t size;        /**< Total download size in bytes (informational). */
 } ota_component_t;
 

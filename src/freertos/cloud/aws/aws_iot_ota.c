@@ -856,6 +856,7 @@ int AwsIotOta_CheckForUpdate(void)
         return -1;
     }
 
+    UART_PRINT("[OTA] Publish to topic %s ...\r\n", s_topicNextGet);
     UART_PRINT("[OTA] Polling for pending jobs...\r\n");
     return 0;
 }
@@ -1017,7 +1018,7 @@ int AwsIotOta_ExecuteUpdate(void)
         ota_https_req_t req;
         req.pURL      = comp->url;
         req.pCaCert   = democonfigROOT_CA_PEM;
-        req.caCertLen = strlen(democonfigROOT_CA_PEM);
+        req.caCertLen = strlen(democonfigROOT_CA_PEM) + 1;
         req.dataCb    = s_fwu_write_cb;
         req.pUserCtx  = &dlCtx;
 
