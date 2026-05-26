@@ -7,7 +7,9 @@ This document describes the **AWS IoT plugin architecture** for the CC3551 micro
 - **X.509 Mutual TLS Authentication** — Certificate-based secure connection
 - **MQTT Telemetry** — Periodic sensor data publishing
 - **Device Shadow** — Remote device state synchronization and control
+- **Device OTA** — AWS OTA implementation with full Jobs mechanism
 - **coreMQTT Library** — FreeRTOS-compatible MQTT protocol stack
+- **coreHTTP Library** — FreeRTOS-compatible HTTPS protocol stack
 
 ---
 
@@ -19,7 +21,7 @@ This document describes the **AWS IoT plugin architecture** for the CC3551 micro
 ┌──────────────────────────────────────────────────────────────┐
 │  Application Layer (User Code)                               │
 │  ├─ AwsIotTelemetry_Connect/Run/Disconnect                   │
-│  ├─ AwsIotLed_Subscribe/OnMqttPublish                         │
+│  ├─ AwsIotLed_Subscribe/OnMqttPublish                        │
 │  └─ Custom MQTT operations                                   │
 └──────────────────────────────────────────────────────────────┘
                            │
@@ -27,8 +29,10 @@ This document describes the **AWS IoT plugin architecture** for the CC3551 micro
 ┌──────────────────────────────────────────────────────────────┐
 │  AWS IoT Cloud Abstraction Layer                             │
 │  Location: src/freertos/cloud/aws/                           │
-│  ├─ aws_iot_telemetry.{c,h}    (Telemetry & subscription)   │
-│  ├─ aws_iot_led.{c,h}          (Shadow-based LED control)   │
+│  ├─ aws_iot_telemetry.{c,h}    (Telemetry & subscription)    │
+│  ├─ aws_iot_led.{c,h}          (Shadow-based LED control)    │
+│  ├─ aws_iot_ota.{c,h}          (OTA abstraction layer)       │
+│  ├─ aws_iot_ota_https.{c,h}    (HTTPS transport for OTA)     │
 │  └─ aws_iot_mqtt.h             (Public API)                  │
 └──────────────────────────────────────────────────────────────┘
                            │
@@ -36,8 +40,8 @@ This document describes the **AWS IoT plugin architecture** for the CC3551 micro
 ┌──────────────────────────────────────────────────────────────┐
 │  coreMQTT Adaptation Layer (AWS-specific)                    │
 │  Location: src/freertos/transport/                           │
-│  ├─ aws_iot_core_mqtt.c        (MQTT wrapper for AWS)       │
-│  └─ AwsIoTMQTT_Init()           (Initialize with QoS tracking)
+│  ├─ aws_iot_core_mqtt.c        (MQTT wrapper for AWS)        │
+│  └─ AwsIoTMQTT_Init()          (Initialize with QoS tracking)|
 └──────────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -153,6 +157,10 @@ aws-osprey/
 │   │   │       ├── aws_iot_telemetry.h
 │   │   │       ├── aws_iot_led.c                 # Shadow-based LED control
 │   │   │       ├── aws_iot_led.h
+│   │   │       ├── aws_iot_ota.c                 # ota wrapper
+│   │   │       ├── aws_iot_ota.h
+│   │   │       ├── aws_iot_ota_https.c           # ota HTTPS wrapper
+│   │   │       ├── aws_iot_ota_https.h
 │   │   │       └── aws_iot_mqtt.h                # Public AWS API
 │   │   │
 │   │   ├── transport/
@@ -749,37 +757,6 @@ Both flows are supported by the device code—it handles jobs from either topic.
 
 ---
 
-## Compilation & Deployment
-
-### Building the AWS Plugin
-
-```bash
-# Build dependencies (root directory)
-make build-all-ticlang
-
-# Build example project (if available)
-make example EXAMPLE=projects/LP_EM_CC35X1/aws-iot-telemetry TOOLCHAIN=ticlang
-```
-
-### Loading Certificates onto Device
-
-Certificates must be provisioned into the CC3551's non-volatile memory (NVOCMP):
-
-1. **During First Boot:**
-   - Device runs provisioning mode (BLE + Wi-Fi)
-   - Receives certificate, key, and thing name over secure channel
-   - Stores in NVOCMP
-
-2. **Via JTAG/Debug Probe:**
-   - Flash pre-provisioned firmware with certs embedded
-   - Use Code Composer Studio debugger
-
-3. **Via AWS IoT Fleet Provisioning (Future):**
-   - Device obtains temporary credentials
-   - Registers itself with AWS
-   - Receives permanent certificate
-
----
 
 ## Testing the Connection
 
@@ -916,18 +893,6 @@ mosquitto_pub \
 - View current shadow state
 - Edit desired state (to control device)
 - See reported state from device
-
-### 3. Message Routing & Analytics
-
-**Manage → Message Routing → Rules:**
-- Create rules to forward messages to S3, DynamoDB, Lambda, etc.
-- Example: Store telemetry in DynamoDB for analytics
-
-### 4. Fleet Provisioning
-
-**Onboard → Provision template:**
-- Enable bulk device provisioning without pre-loading certificates
-- Devices register themselves with AWS
 
 ---
 
