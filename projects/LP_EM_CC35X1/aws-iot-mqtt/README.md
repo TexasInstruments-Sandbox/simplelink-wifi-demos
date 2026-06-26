@@ -324,16 +324,16 @@ Before connecting your CC3551 device, you must set up AWS IoT Core resources:
 **Via AWS IoT Console:**
 
 1. Navigate to [AWS IoT Console](https://console.aws.amazon.com/iot/home)
-2. Go to **Certificates** (left sidebar)
-3. Click **Create certificate**
-4. Select **Create certificate** (AWS will auto-generate)
-5. Download files:
+2. Go to **Certificates** (left sidebar under Manage -> Security)
+3. Click **Add certificate -> Create certificate**
+4. Select **Auto-generate new certificate** and **Active** Options
+5. Click **Create** at the bottom
+6. Download files:
    - `certificate.pem`
    - `private.key`
    - `public.key`
    - `AmazonRootCA1.pem` (or copy from [AWS Trust Services](https://www.amazontrust.com/repository/AmazonRootCA1.pem))
-6. Click **Activate** to enable the certificate
-7. **Save the Certificate ARN** (e.g., `arn:aws:iot:us-east-1:123456789012:cert/abcd1234...`)
+7. From the certificates page, find the newly created certificate and **Copy the Certificate ARN** (e.g., `arn:aws:iot:us-east-1:123456789012:cert/abcd1234...`)
 
 **Via AWS CLI:**
 
@@ -765,7 +765,7 @@ Both flows are supported by the device code—it handles jobs from either topic.
 **No prerequisites — everything in the AWS Console:**
 
 1. Go to [AWS IoT Console](https://console.aws.amazon.com/iot/home)
-2. Left sidebar → **Test** (under Manage)
+2. Left sidebar → **Test** → **MQTT Test client**
 3. **Subscribe to topics:**
    - In the **Subscribe to a topic** field, enter: `AwsTI/DevMac_AABBCCDDEEFF/telemetry`
    - Click **Subscribe**

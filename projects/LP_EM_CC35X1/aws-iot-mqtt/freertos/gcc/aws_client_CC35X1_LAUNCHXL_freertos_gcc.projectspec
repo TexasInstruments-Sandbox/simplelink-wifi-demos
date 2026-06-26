@@ -11,26 +11,27 @@
 
     <project
         title="AWS IOT Client"
-        name="aws_iot_project_LP_EM_CC35X1_freertos_ticlang"
+        name="aws_iot_project_LP_EM_CC35X1_freertos_gcc"
         configurations="Debug"
-        toolChain="TICLANG"
+        toolChain="GNU"
         connection="TIXDS110_Connection.xml"
         device="Cortex M.CC35X1E"
         ignoreDefaultDeviceSettings="true"
         ignoreDefaultCCSSettings="false"
         products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig:1.26.1"
         compilerBuildOptions="
-            -Ofast
+            -O3
             -DCC35XX
             -DRAM_CONTAINER
             -DSNTP_SUPPORT
             -DNVOCMP_POSIX_MUTEX
+			-D_REENT_SMALL
 			-DMBEDTLS_CONFIG_FILE=&apos;&quot;config-hsm.h&quot;&apos;
 			-DMBEDTLS_PSA_CRYPTO_CONFIG_FILE=&apos;&quot;config-psa-crypto-hsm.h&quot;&apos;
 			-DHTTP_DO_NOT_USE_CUSTOM_CONFIG
             -I${SIMPLELINK_SDK}/source
             -I${SIMPLELINK_SDK}/kernel/freertos
-            -I${SIMPLELINK_SDK}/source/ti/posix/ticlang
+            -I${SIMPLELINK_SDK}/source/ti/posix/gcc
             -I${SIMPLELINK_SDK}/source/third_party/freertos/include
             -I${SIMPLELINK_SDK}/source/third_party/freertos/portable/GCC/ARM_CM33_NTZ/non_secure
             -I${SIMPLELINK_SDK}/source/ti/net/ble_interface/inc_adapt
@@ -88,34 +89,49 @@
             -I${PROJECT_ROOT}/logging
             -I${PROJECT_ROOT}/utilities
             -I${PROJECT_ROOT}
-            -gdwarf-3
             -mcpu=cortex-m33
+            -mthumb
+            -std=c99
             -mfloat-abi=hard
             -mfpu=fpv5-sp-d16
+            -ffunction-sections
+            -fdata-sections
+            -g
+            -gstrict-dwarf
             -Wall
+            -I${CG_TOOL_ROOT}/arm-none-eabi/include/newlib-nano
+            -I${CG_TOOL_ROOT}/arm-none-eabi/include
         "
         linkerBuildOptions="
+            -mcpu=cortex-m33
             -L${SIMPLELINK_SDK}/source
-            -Wl,-l${SIMPLELINK_SDK}/source/third_party/lwip/lib/ticlang/lwip.a
-            -Wl,-l${SIMPLELINK_SDK}/source/third_party/hostap/lib/ticlang/hostap.a
-            -Wl,-l${SIMPLELINK_SDK}/source/third_party/nimble/lib/ticlang/nimble.a
-            -Wl,-l${SIMPLELINK_SDK}/source/ti/net/wifi_stack/lib/ticlang/wifi_stack.a
-            -Wl,-l${SIMPLELINK_SDK}/source/ti/net/ble_interface/lib/ticlang/ble_interface.a
-            -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/lib/ticlang/wifi_host_driver.a
-            -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_platform/cc35xx/lib/ticlang/wifi_platform_cc35xx.a
-            -Wl,-l${SIMPLELINK_SDK}/source/ti/utils/FWU/lib/ticlang/FWU.a
+            -fno-lto
+            -Wl,-l${SIMPLELINK_SDK}/source/third_party/lwip/lib/gcc/lwip.a
+            -Wl,-l${SIMPLELINK_SDK}/source/third_party/hostap/lib/gcc/hostap.a
+            -Wl,-l${SIMPLELINK_SDK}/source/third_party/nimble/lib/gcc/nimble.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/net/wifi_stack/lib/gcc/wifi_stack.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/net/ble_interface/lib/gcc/ble_interface.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/lib/gcc/wifi_host_driver.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_platform/cc35xx/lib/gcc/wifi_platform_cc35xx.a
+            -Wl,-l${SIMPLELINK_SDK}/source/ti/utils/FWU/lib/gcc/FWU.a
             -Wl,--reread_libs
             -L${PROJECT_BUILD_DIR}/syscfg
             -lti_utils_build_linker.cmd.genlibs
-            -Wl,--rom_model
-            -Wl,--warn_sections
-            -L${CG_TOOL_ROOT}/lib
-            -llibc.a
+            -mthumb
+            -mfloat-abi=hard
+            -mfpu=fpv5-sp-d16
+            -nostartfiles
+            -static
+            -Wl,--gc-sections
+            -lgcc
+            -lc
+            -lm
+            --specs=nano.specs
         "
         sysConfigBuildOptions="
             --product ${SIMPLELINK_SDK}/.metadata/product.json
             --product ${COM_TI_SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR}/.metadata/product.json
-            --compiler ticlang
+            --compiler gcc
         "
         description="connect to AWS IoT MQTT broker">
 
@@ -228,7 +244,7 @@
         </file>
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/transport/aws/transport_tls_socket.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="transport/aws">
         </file>
-		
+
 		<!-- ============================================================================ -->
         <!-- AWS cloud adaptation (cloud/aws/ directory)	                              -->
         <!-- ============================================================================ -->
@@ -241,7 +257,7 @@
         </file>
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_ota_https.c" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
         </file>
-		
+
         <!-- Include Files -->
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_telemetry.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
         </file>
@@ -251,7 +267,7 @@
         </file>
 		<file path="${SIMPLELINK_SDK_DEMO_ROOT}/src/freertos/cloud/aws/aws_iot_ota_https.h" openOnCreation="false" excludeFromBuild="false" action="copy" targetDirectory="cloud/aws">
         </file>
-		
+
         <!-- ============================================================================ -->
         <!-- CONNECTION LAYER (connection/ directory)                                    -->
         <!-- ============================================================================ -->
@@ -316,7 +332,7 @@
         <!-- Interface Files -->
 		<file path="${COREMQTT}/source/interface/transport_interface.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreMQTT/source/interface">
         </file>
-		
+
 		<!-- ============================================================================ -->
         <!-- COREHTTP (components/coreHTTP/)                                             -->
         <!-- Linked from resources/third-party/coreHTTP                                  -->
@@ -343,7 +359,7 @@
         </file>
 		<file path="${COREHTTP}/source/dependency/3rdparty/llhttp/include/llhttp.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreHTTP/source/dependency">
         </file>
-		
+
 		<!-- ============================================================================ -->
         <!-- COREJSON (components/coreJson/)                                             -->
         <!-- Linked from resources/third-party/coreJSON                                  -->
@@ -354,7 +370,7 @@
         <!-- Include Files -->
 		<file path="${COREJSON}/source/include/core_mqtt_config_defaults.h" openOnCreation="false" excludeFromBuild="false" action="link" targetDirectory="components/coreJSON/source/include">
         </file>
-		
+
 		<!-- ============================================================================ -->
         <!-- BACKOFFALGORITHM (components/BackoffAlgorithm/)                              -->
         <!-- Linked from resources/third-party/backoffAlgorithm                           -->
@@ -369,7 +385,7 @@
         <!-- ============================================================================ -->
         <!-- LINKER SCRIPT                                                               -->
         <!-- ============================================================================ -->
-        <file path="../../freertos/ticlang/linker.cmd" openOnCreation="false" excludeFromBuild="false" action="copy">
+        <file path="../../freertos/gcc/linker_GNU.lds" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
     </project>
 </projectSpec>
