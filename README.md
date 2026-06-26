@@ -23,7 +23,10 @@ simplelink_wi-fi_demos/
 ├── projects/
 │   └── LP_EM_CC35X1/           # Examples for CC3500/CC3501/CC3550/CC3551
 │       └── azure-iot-mqtt/     # Azure IoT Hub MQTT client example
+│       └── aws-iot-mqtt/       # AWS IoT Hub MQTT client example
 ├── src/freertos/               # Shared platform abstraction layers
+│   └── cloud/
+│       └── aws/                # AWS adaptation Layer
 │   ├── ns/                     # Network stack interfaces (DNS, MQTT, TCP/IP, Wi-Fi)
 │   ├── platform/               # Platform-specific implementations
 │   ├── transport/              # TLS transport layer
@@ -173,8 +176,9 @@ make
 | Example | Description | Cloud Provider |
 |---------|-------------|----------------|
 | **azure-iot-mqtt** | Connect to Azure IoT Hub via MQTT with X.509 or SAS authentication | Azure |
+| **aws-iot-mqtt** | Connect to AWS IoT Hub via MQTT with X.509 | AWS |
 
-More examples coming soon (AWS IoT, HTTP clients, OTA updates).
+More examples coming soon (AWS JIT provisioning, Azure OTA updates and HTTP clients).
 
 ---
 
@@ -223,11 +227,14 @@ All third-party libraries are tracked as git submodules:
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| **simplelink-wifi-sdk** | 9.22.00.15 | TI's SimpleLink Wi-Fi SDK |
+| **simplelink-wifi-sdk** | 10.10.01.08 | TI's SimpleLink Wi-Fi SDK |
 | azure-sdk-for-c | v1.6.0-beta.1 | Azure SDK for Embedded C |
 | azure-iot-middleware-freertos | v1.2.0-beta.1 | Azure IoT FreeRTOS middleware |
 | coreMQTT | v2.3.1+ | FreeRTOS MQTT protocol library |
 | iot-middleware-freertos-samples | main | Azure IoT reference samples |
+| backoffAlgorithm | main | FreeRTOS network backoff library |
+| icoreHTTP | main | FreeRTOS HTTP library |
+| coreJSON | main | FreeRTOS JSON library |
 
 **Note:** Some components in `projects/*/components/` contain TI-specific modifications (timeout adjustments, compiler compatibility fixes).
 
@@ -307,6 +314,11 @@ See individual component directories for full license texts.
 **v1.0.0** (2025-03-13)
 - Initial release
 - Azure IoT MQTT example for LP-EM-CC35X1 (CC3500/CC3501/CC3550/CC3551)
+- Support for TI Clang and GCC toolchains
+- FreeRTOS + mbedTLS with PSA Crypto hardware acceleration
+
+**v1.1.0** (2026-06-15)
+- AWS IoT MQTT and HTTPS example for LP-EM-CC35X1 (CC3500/CC3501/CC3550/CC3551)
 - Support for TI Clang and GCC toolchains
 - FreeRTOS + mbedTLS with PSA Crypto hardware acceleration
 
