@@ -13,12 +13,3 @@
 [submodule "resources/third-party/iot-middleware-freertos-samples"]
 	path = resources/third-party/iot-middleware-freertos-samples
 	url = https://github.com/Azure-Samples/iot-middleware-freertos-samples.git
-[submodule "resources/third-party/backoffAlgorithm"]
-	path = resources/third-party/backoffAlgorithm
-	url = https://github.com/FreeRTOS/backoffAlgorithm.git
-[submodule "resources/third-party/coreHTTP"]
-	path = resources/third-party/coreHTTP
-	url = https://github.com/FreeRTOS/coreHTTP.git
-[submodule "resources/third-party/coreJSON"]
-	path = resources/third-party/coreJSON
-	url = https://github.com/FreeRTOS/coreJSON.git

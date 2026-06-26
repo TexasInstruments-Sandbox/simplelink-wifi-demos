@@ -12,7 +12,7 @@
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
 
-#include "sockets_wrapper.h"
+#include "../transport/sockets_wrapper.h"
 
 /* mbed TLS includes. */
 #include "../configs/mbedtls_config.h"
