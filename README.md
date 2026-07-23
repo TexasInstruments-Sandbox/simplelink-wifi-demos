@@ -311,14 +311,19 @@ See individual component directories for full license texts.
 
 ## Version History
 
-**v1.0.0** (2025-03-13)
-- Initial release
-- Azure IoT MQTT example for LP-EM-CC35X1 (CC3500/CC3501/CC3550/CC3551)
-- Support for TI Clang and GCC toolchains
-- FreeRTOS + mbedTLS with PSA Crypto hardware acceleration
+**v1.1.0** (2026-07-23)
+- Fixed Windows make issue blocking from building SDK
+- Fixed AWS GCC Makefile issue
+- Fixed Submodule file to point to correct simplelink-wifi-sdk branch
 
 **v1.1.0** (2026-06-15)
 - AWS IoT MQTT and HTTPS example for LP-EM-CC35X1 (CC3500/CC3501/CC3550/CC3551)
+- Support for TI Clang and GCC toolchains
+- FreeRTOS + mbedTLS with PSA Crypto hardware acceleration
+
+**v1.0.0** (2025-03-13)
+- Initial release
+- Azure IoT MQTT example for LP-EM-CC35X1 (CC3500/CC3501/CC3550/CC3551)
 - Support for TI Clang and GCC toolchains
 - FreeRTOS + mbedTLS with PSA Crypto hardware acceleration
 
