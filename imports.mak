@@ -5,14 +5,15 @@
 # have spaces.
 #
 
-SYSCONFIG_TOOL                      ?= /Applications/ti/sysconfig_1.26.1/sysconfig_cli.sh
+SYSCONFIG_TOOL         ?= /Applications/ti/sysconfig_1.26.3/sysconfig_cli.sh
 SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR ?= /Applications/ti/simplelink_wifi_toolbox_macos_4_1_11
-CCS_INSTALL_DIR                     ?= /Users/x/ti/ccs2051
-CMAKE                               ?= /opt/homebrew/bin/cmake
-PYTHON                              ?= python3
 
-TICLANG_ARMCOMPILER                 ?= /Users/x/ti/ccs2051/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS
-GCC_ARMCOMPILER                     ?= /Applications/ArmGNUToolchain/15.2.rel1/arm-none-eabi
+CMAKE                  ?= /opt/homebrew/bin/cmake
+PYTHON                 ?= python3
+
+TICLANG_ARMCOMPILER    ?= /Users/x/ti/ccs2041/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS
+GCC_ARMCOMPILER        ?= /Applications/ArmGNUToolchain/15.2.rel1/arm-none-eabi
+#
 #
 # Do Not change the variables below these comments
 #

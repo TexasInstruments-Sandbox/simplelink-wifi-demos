@@ -208,6 +208,7 @@ CFLAGS += -I../.. \
     -mfpu=fpv5-sp-d16 \
     -Wall
 
+
 LFLAGS += "-L$(SIMPLELINK_SDK_INSTALL_DIR)/source" \
     "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/lwip/lib/ticlang/lwip.a" \
     "-Wl,-l$(SIMPLELINK_SDK_INSTALL_DIR)/source/third_party/hostap/lib/ticlang/hostap.a" \
@@ -544,13 +545,15 @@ ti_drivers_config.c ti_freertos_config.c ti_freertos_portable_config.c ti_flash_
 
 $(NAME).out: $(OBJECTS)
 	@ echo "Linking $@"
-	$(V) $(LNK) -Wl,-u,_c_int00 $(OBJECTS) $(LFLAGS) -o $(NAME).out
+	@printf '%s ' -Wl,-u,_c_int00 $(OBJECTS) $(LFLAGS) > link.rsp
+	$(V) $(LNK) @link.rsp -o $(NAME).out
 
 clean:
 	@ echo "Cleaning..."
 	$(V) $(RM) $(OBJECTS) > $(DEVNULL) 2>&1
 	$(V) $(RM) $(NAME).out > $(DEVNULL) 2>&1
 	$(V) $(RM) $(NAME).map > $(DEVNULL) 2>&1
+	$(V) $(RM) link.rsp > $(DEVNULL) 2>&1
 	$(V) $(RM) $(call SLASH_FIXUP,$(SYSCFG_FILES)) > $(DEVNULL) 2>&1
 
 help:

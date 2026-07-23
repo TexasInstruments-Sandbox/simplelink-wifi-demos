@@ -216,6 +216,7 @@ CFLAGS += -I../.. \
     "-I$(GCC_ARMCOMPILER)/arm-none-eabi/include/newlib-nano" \
     "-I$(GCC_ARMCOMPILER)/arm-none-eabi/include"
 
+
 LFLAGS += -Wl,-T,../gcc/linker_GNU.lds \
     "-Wl,-Map,$(NAME).map" \
     -mcpu=cortex-m33 \
@@ -561,13 +562,15 @@ ti_drivers_config.c ti_freertos_config.c ti_freertos_portable_config.c ti_flash_
 
 $(NAME).out: $(OBJECTS)
 	@ echo "Linking $@"
-	$(V) $(LNK) $(OBJECTS) $(LFLAGS) -o $(NAME).out
+	@printf '%s ' $(OBJECTS) $(LFLAGS) > link.rsp
+	$(V) $(LNK) @link.rsp -o $(NAME).out
 
 clean:
 	@ echo "Cleaning..."
 	$(V) $(RM) $(OBJECTS) > $(DEVNULL) 2>&1
 	$(V) $(RM) $(NAME).out > $(DEVNULL) 2>&1
 	$(V) $(RM) $(NAME).map > $(DEVNULL) 2>&1
+	$(V) $(RM) link.rsp > $(DEVNULL) 2>&1
 	$(V) $(RM) $(call SLASH_FIXUP,$(SYSCFG_FILES)) > $(DEVNULL) 2>&1
 
 help:

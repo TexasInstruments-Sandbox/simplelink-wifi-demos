@@ -18,7 +18,7 @@
         device="Cortex M.CC35X1E"
         ignoreDefaultDeviceSettings="true"
         ignoreDefaultCCSSettings="false"
-        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig:1.26.1"
+        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig"
         compilerBuildOptions="
             -O3
             -DCC35XX
@@ -114,7 +114,6 @@
             -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_host_driver/lib/gcc/wifi_host_driver.a
             -Wl,-l${SIMPLELINK_SDK}/source/ti/drivers/net/wifi/wifi_platform/cc35xx/lib/gcc/wifi_platform_cc35xx.a
             -Wl,-l${SIMPLELINK_SDK}/source/ti/utils/FWU/lib/gcc/FWU.a
-            -Wl,--reread_libs
             -L${PROJECT_BUILD_DIR}/syscfg
             -lti_utils_build_linker.cmd.genlibs
             -mthumb
