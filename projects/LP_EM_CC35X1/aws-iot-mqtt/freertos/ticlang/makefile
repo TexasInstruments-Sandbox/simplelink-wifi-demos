@@ -104,7 +104,7 @@ CFLAGS += -I../.. \
     -I. \
     -I.. \
     $(addprefix @,$(SYSCFG_OPT_FILES)) \
-    -include FreeRTOSConfigCustom.h \
+    -include FreeRTOSConfig.h \
     -Ofast \
     -DCC35XX \
     -DRAM_CONTAINER \
