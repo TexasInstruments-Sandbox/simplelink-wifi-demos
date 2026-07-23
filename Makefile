@@ -82,7 +82,7 @@ build-sdk-gcc: check-tools-gcc
 	@echo "$(COLOR_BLUE)$(COLOR_BOLD)Building SimpleLink Wi-Fi SDK (GCC)$(COLOR_RESET)"
 	@echo "$(COLOR_BLUE)$(COLOR_BOLD)========================================$(COLOR_RESET)"
 	@echo ""
-	@cd $(SDK_DIR) && $(MAKE) build-gcc
+	@cd $(SDK_DIR) && CMAKE_POLICY_VERSION_MINIMUM=3.21 $(MAKE) build-gcc
 	@echo ""
 	@echo "$(COLOR_GREEN)✓ SimpleLink SDK build complete (GCC)$(COLOR_RESET)"
 
@@ -199,7 +199,7 @@ ifndef GCC_ARMCOMPILER
 	@exit 1
 endif
 	@echo "  ✓ GCC_ARMCOMPILER: $(GCC_ARMCOMPILER)"
-	@if [ ! -f "$(GCC_ARMCOMPILER)/arm-none-eabi-gcc" ] && [ ! -f "$(GCC_ARMCOMPILER)/arm-none-eabi-gcc.exe" ]; then \
+	@if [ ! -f "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc" ] && [ ! -f "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc.exe" ]; then \
 		echo "$(COLOR_YELLOW)⚠ ERROR: ARM GCC compiler not found at $(GCC_ARMCOMPILER)$(COLOR_RESET)"; \
 		exit 1; \
 	fi

@@ -11,16 +11,16 @@
 
     <project
         title="Azure IOT Client"
-        name="azure_iot_project_LP_EM_CC35X1_freertos_ticlang_9_22_00_12_projectspec"
+        name="azure_iot_project_LP_EM_CC35X1_freertos_ticlang"
         configurations="Debug"
         toolChain="TICLANG"
         connection="TIXDS110_Connection.xml"
         device="Cortex M.CC35X1E"
         ignoreDefaultDeviceSettings="true"
         ignoreDefaultCCSSettings="false"
-        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig:1.26.1"
+        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig"
         compilerBuildOptions="
-            -Ofast
+            -O3
             -DCC35XX
             -DRAM_CONTAINER
             -DSNTP_SUPPORT

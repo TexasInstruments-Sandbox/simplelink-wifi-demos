@@ -47,12 +47,12 @@ simplelink_wi-fi_demos/
 
 ## Supported Devices
 
-| Device | Part Number | Features |
-|--------|-------------|----------|
-| **CC3500** | CC3500MRGKT | 2.4 GHz Wi-Fi 6, Arm Cortex-M33, 2MB Flash |
-| **CC3501** | CC3501MRGKT | 2.4 GHz Wi-Fi 6 + Bluetooth LE 5.4, Arm Cortex-M33, 2MB Flash |
-| **CC3550** | CC3550MRGKT | 2.4 GHz + 5 GHz Wi-Fi 6, Arm Cortex-M33, 2MB Flash |
-| **CC3551** | CC3551MRGKT | 2.4 GHz + 5 GHz Wi-Fi 6 + Bluetooth LE 5.4, Arm Cortex-M33, 2MB Flash |
+| Device | Features |
+|--------|----------|
+| **CC3500** | 2.4 GHz Wi-Fi 6, Arm Cortex-M33|
+| **CC3501** | 2.4 GHz Wi-Fi 6 + Bluetooth LE 5.4, Arm Cortex-M33|
+| **CC3550** | 2.4 GHz + 5 GHz Wi-Fi 6, Arm Cortex-M33|
+| **CC3551** | 2.4 GHz + 5 GHz Wi-Fi 6 + Bluetooth LE 5.4, Arm Cortex-M33|
 
 All devices share the same LaunchPad form factor: **LP-EM-CC35X1**
 
@@ -64,15 +64,16 @@ Install these tools before building:
 
 | Tool | Version | Purpose | Download |
 |------|---------|---------|----------|
-| **Code Composer Studio** | 12.8.0+ | IDE, TI Clang compiler, debugger | [ti.com/tool/CCSTUDIO](https://www.ti.com/tool/CCSTUDIO) |
-| **SysConfig** | 1.20.0+ | Pin/peripheral configuration | Bundled with CCS |
+| **Code Composer Studio** | 20.4.1+ | IDE, TI Clang compiler, debugger | [ti.com/tool/CCSTUDIO](https://www.ti.com/tool/CCSTUDIO) |
+| **SysConfig** | 1.26.3+ | Pin/peripheral configuration | Bundled with CCS |
+| **SimpleLink Wi-Fi Toolbox** | 4.2.4 | Device configuration toolbox | [ti.com/tool/SIMPLELINK-WIFI-TOOLBOX](https://www.ti.com/tool/SIMPLELINK-WIFI-TOOLBOX) |
 | **Git** | 2.13+ | Submodule support | [git-scm.com](https://git-scm.com/downloads) |
 | **GNU Make** | Any | Build automation | Pre-installed (Linux/macOS)<br>Windows: [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm) |
 | **CMake** | 3.21+ | SDK build system | [cmake.org](https://cmake.org/download/) |
 | **Python** | 3.7+ | Build scripts | [python.org](https://www.python.org/downloads/) |
 
 **Optional (for GCC builds):**
-- [ARM GCC 13.2+](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) - Set `GCC_ARMCOMPILER` in `imports.mak`
+- [ARM GCC 12.3.Rel1+](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) - Set `GCC_ARMCOMPILER` in `imports.mak`
 
 ---
 
@@ -227,7 +228,6 @@ All third-party libraries are tracked as git submodules:
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| **simplelink-wifi-sdk** | 10.10.01.08 | TI's SimpleLink Wi-Fi SDK |
 | azure-sdk-for-c | v1.6.0-beta.1 | Azure SDK for Embedded C |
 | azure-iot-middleware-freertos | v1.2.0-beta.1 | Azure IoT FreeRTOS middleware |
 | coreMQTT | v2.3.1+ | FreeRTOS MQTT protocol library |

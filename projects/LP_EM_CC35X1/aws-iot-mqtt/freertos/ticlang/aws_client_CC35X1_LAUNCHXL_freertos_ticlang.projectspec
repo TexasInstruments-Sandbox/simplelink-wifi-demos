@@ -18,9 +18,9 @@
         device="Cortex M.CC35X1E"
         ignoreDefaultDeviceSettings="true"
         ignoreDefaultCCSSettings="false"
-        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig:1.26.1"
+        products="com.ti.SIMPLELINK_WIFI_TOOLBOX;sysconfig"
         compilerBuildOptions="
-            -Ofast
+            -O3
             -DCC35XX
             -DRAM_CONTAINER
             -DSNTP_SUPPORT

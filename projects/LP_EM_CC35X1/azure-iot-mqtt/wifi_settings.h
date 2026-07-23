@@ -66,17 +66,9 @@
  */
 // #warning "Please set the credentials of the designated AP in wifi_settings.h file"
 
-// #define AP_SSID 	"wcsapps"       // "network-name"
-// #define AP_SEC_TYPE	WLAN_SEC_TYPE_WPA_WPA2  // WLAN_SEC_TYPE_OPEN, WLAN_SEC_TYPE_WPA3
-// #define AP_PASSWORD     "ecsapps1"	        // "network-password"
-
-// #define AP_SSID 	"SpectrumSetup-10"       // "network-name"
-// #define AP_SEC_TYPE	WLAN_SEC_TYPE_WPA_WPA2  // WLAN_SEC_TYPE_OPEN, WLAN_SEC_TYPE_WPA3
-// #define AP_PASSWORD     "furrycrown322"	        // "network-password"
-
-#define AP_SSID 	"Austria"       // "network-name"
-#define AP_SEC_TYPE	WLAN_SEC_TYPE_WPA_WPA2  // WLAN_SEC_TYPE_OPEN, WLAN_SEC_TYPE_WPA3
-#define AP_PASSWORD     "archduke100"	        // "network-password"
+#define AP_SSID 	"SSID"                      // "network-name"
+#define AP_SEC_TYPE	WLAN_SEC_TYPE_WPA_WPA2      // WLAN_SEC_TYPE_OPEN, WLAN_SEC_TYPE_WPA3
+#define AP_PASSWORD     "password123"	        // "network-password"
 #endif
 
 /*** UI DEFINITIONS */

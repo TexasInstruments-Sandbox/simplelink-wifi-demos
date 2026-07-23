@@ -38,9 +38,22 @@ ti_*.c
 ti_*.h
 *.opt
 *.genlibs
+*.genmap
 FreeRTOSConfig.h
+
+# SysConfig toolbox generated files (not covered by make clean)
+action_params.json
+action_request_extra.txt
+cc35xx-conf.ini
+external_memory_configurator.json
+mem_cfg_extra.txt
+syscfg_c.rov.xs
+ti_build_linker.lds.toolbox
+ti_build_linker.cmd.toolbox
 
 #SDK dependencies
 
+#Testing Infra
+testing/
 
 *.DS_Store
