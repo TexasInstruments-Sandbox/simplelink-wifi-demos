@@ -5,21 +5,28 @@
 [submodule "resources/third-party/azure-iot-middleware-freertos"]
 	path = resources/third-party/azure-iot-middleware-freertos
 	url = https://github.com/Azure/azure-iot-middleware-freertos.git
+	branch = main
 [submodule "resources/third-party/azure-sdk-for-c"]
 	path = resources/third-party/azure-sdk-for-c
 	url = https://github.com/Azure/azure-sdk-for-c.git
+	branch = main
 [submodule "resources/third-party/coreMQTT"]
 	path = resources/third-party/coreMQTT
 	url = https://github.com/FreeRTOS/coreMQTT.git
+	branch = main
 [submodule "resources/third-party/iot-middleware-freertos-samples"]
 	path = resources/third-party/iot-middleware-freertos-samples
 	url = https://github.com/Azure-Samples/iot-middleware-freertos-samples.git
+	branch = main
 [submodule "resources/third-party/backoffAlgorithm"]
 	path = resources/third-party/backoffAlgorithm
 	url = https://github.com/FreeRTOS/backoffAlgorithm.git
+	branch = main
 [submodule "resources/third-party/coreHTTP"]
 	path = resources/third-party/coreHTTP
 	url = https://github.com/FreeRTOS/coreHTTP.git
+	branch = main
 [submodule "resources/third-party/coreJSON"]
 	path = resources/third-party/coreJSON
 	url = https://github.com/FreeRTOS/coreJSON.git
+	branch = main
