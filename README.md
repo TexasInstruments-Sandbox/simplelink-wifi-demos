@@ -94,8 +94,7 @@ git submodule status
 <summary>If you cloned without --recurse-submodules</summary>
 
 ```bash
-git submodule init
-git submodule update
+  git submodule update --init --recursive                                                                                                                                                                                 
 ```
 </details>
 
@@ -311,10 +310,11 @@ See individual component directories for full license texts.
 
 ## Version History
 
-**v1.1.0** (2026-07-23)
+**v1.2.0** (2026-07-23)
 - Fixed Windows make issue blocking from building SDK
 - Fixed AWS GCC Makefile issue
 - Fixed Submodule file to point to correct simplelink-wifi-sdk branch
+- Updated all submodule
 
 **v1.1.0** (2026-06-15)
 - AWS IoT MQTT and HTTPS example for LP-EM-CC35X1 (CC3500/CC3501/CC3550/CC3551)
